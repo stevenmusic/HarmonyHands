@@ -1,0 +1,4 @@
+node_modules/
+tools/test/samplecache/
+tools/test/*.wav
+tools/test/*.png
