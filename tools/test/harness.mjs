@@ -21,7 +21,7 @@ export async function open(opts = {}){
     if (!fs.existsSync(f)) { try { execFileSync("curl", ["-sSfL", "-o", f, url]); } catch (e) { return r.fulfill({ status: 404, body: "" }); } }
     r.fulfill({ path: f, headers: { "access-control-allow-origin": "*", "content-type": url.endsWith(".json") ? "application/json" : "audio/flac" } });
   });
-  await page.goto("file://" + path.resolve(opts.file || new URL("../../index.html", import.meta.url).pathname));
-  await page.waitForFunction(() => window.__scoreReady >= 1, null, { timeout: 60000 });
+  await page.goto("file://" + path.resolve(opts.file || process.env.HH_FILE || new URL("../../index.html", import.meta.url).pathname));
+  await page.waitForFunction(() => window.__stageReady >= 1, null, { timeout: 60000 });
   return { browser, page, errors };
 }
