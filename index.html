@@ -165,7 +165,7 @@ main{
 .field{display:flex;flex-direction:column;gap:3px;min-width:0}
 .field[hidden]{display:none}
 .field.wide{grid-column:span 2}
-.field.gtr{grid-column:span 4}
+.field.gtr{grid-column:span 3}
 .field label{font-size:var(--fs-2xs);color:var(--muted-bright);letter-spacing:.04em}
 .field select,.field input{
   width:100%;min-width:0;height:36px;border:1px solid var(--line);border-radius:var(--radius-sm);
@@ -185,7 +185,7 @@ main{
   .fields{grid-template-columns:repeat(2,minmax(0,1fr))}
   .field.wide,.field.gtr{grid-column:span 1}
   .field.gtr{grid-column:span 2}
-  #fTempo{order:8} #fLoops{order:9}
+  #fTone{order:7} #fLoops{order:8} #fTempo{order:9}
 }
 @media (max-width:600px){
   .setup{padding:8px 12px}
@@ -369,6 +369,7 @@ body.light{background:
         <div class="field wide" id="fLH"><label for="selLH" data-i18n="lblLH">左手型態</label><select id="selLH"></select></div>
         <div class="field wide" id="fRH"><label for="selRH" data-i18n="lblRH">右手型態</label><select id="selRH"></select></div>
         <div class="field wide gtr" id="fGtr" hidden><label for="selGtr" data-i18n="lblGtr">右手指法(T123)</label><select id="selGtr"></select></div>
+        <div class="field" id="fTone" hidden><label for="selTone" data-i18n="lblTone">音色</label><select id="selTone"></select></div>
         <div class="field wide" id="fTempo"><label for="inpTempo" data-i18n="lblTempo">速度(BPM)</label>
           <div class="tempo-row">
             <button class="btn" id="tempoDown" data-i18n-attr="aria-label:tempoDown" aria-label="慢一點"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></button>
@@ -433,7 +434,7 @@ const I18N = {
     langToggleText: "EN", langToggleLabel: "切換為英文", langToggleTitle: "切換語言",
     themeToggleLabel: "淺色模式", themeToggleTitle: "切換淺色/深色主題",
     setupTitle: "伴奏設定", setupSub: "選風格與和弦進行,產生伴奏樂譜",
-    instPiano: "鋼琴", instGuitar: "吉他", lblInst: "樂器", lblLH: "左手型態", lblRH: "右手型態", lblGtr: "右手指法(T123)",
+    instPiano: "鋼琴", instGuitar: "吉他", lblInst: "樂器", lblTone: "音色", lblLH: "左手型態", lblRH: "右手型態", lblGtr: "右手指法(T123)",
     lblStyle: "風格", lblProg: "和弦進行", lblKey: "調", lblTempo: "速度(BPM)", lblLoops: "反覆次數",
     tempoDown: "慢一點", tempoUp: "快一點",
     play: "播放", stop: "停止", loop: "循環", countIn: "預備拍",
@@ -446,7 +447,7 @@ const I18N = {
     langToggleText: "中", langToggleLabel: "Switch to Chinese", langToggleTitle: "Switch language",
     themeToggleLabel: "Light mode", themeToggleTitle: "Switch light/dark theme",
     setupTitle: "Setup", setupSub: "Pick a style and progression to generate an accompaniment",
-    instPiano: "Piano", instGuitar: "Guitar", lblInst: "Instrument", lblLH: "Left hand", lblRH: "Right hand", lblGtr: "Right-hand picking (T123)",
+    instPiano: "Piano", instGuitar: "Guitar", lblInst: "Instrument", lblTone: "Sound", lblLH: "Left hand", lblRH: "Right hand", lblGtr: "Right-hand picking (T123)",
     lblStyle: "Style", lblProg: "Progression", lblKey: "Key", lblTempo: "Tempo (BPM)", lblLoops: "Repeats",
     tempoDown: "Slower", tempoUp: "Faster",
     play: "Play", stop: "Stop", loop: "Loop", countIn: "Count-in",
@@ -1408,72 +1409,104 @@ function playPianoNote(m, when, keyUp, damperAt, vel, pedal){
   return true;
 }
 
-/* ── 民謠吉他:FSS Steel-String Acoustic Guitar(ScrollScore guitar/steel/,FreePats)──
-   E2~C6 每個半音都有錄音,取最近的 root;兩層力度(1-85 / 86-127) */
-const GTR_BASE = SAMPLE_ROOT + "guitar/steel/";
-let GTR_GAIN = 1.6;
+/* ── 吉他:兩種音色,都是每個半音都有錄音的取樣 ──
+   古典吉他(預設):Philharmonia Orchestra 的古典吉他(CC BY-SA 3.0),E2~B4 每個半音 + D5~E5、G5、G♯5,強/弱兩層;
+     tools/build/philharmonia_guitar.py 處理(65Hz 高通、對齊起音、響度對齊),音準偏差寫在 manifest 的 tune(音分)播放時校正。原檔是 MP3 96kbps,13kHz 以上濾掉
+   民謠吉他:FSS Steel-String(FreePats,GPL-3.0 + 音色例外,ScrollScore guitar/steel/),每個半音都有錄音 × 2 層力度
+   EQ:鋼弦照 ScrollScore GTR_EQ(75Hz 高通、220Hz −2dB、2.8kHz −1.5dB);古典 75Hz 高通、3.5kHz 以上 +1.5dB(尼龍弦 3~8kHz 比鋼弦暗 6~9dB)、13kHz 低通 */
+const GTR_TONES = {
+  classical: { base: SAMPLE_ROOT + "guitar/classical/", gain: 0.86, velDb: 4, off: false,   // 0.86:實測跟民謠吉他一樣大聲(同一段伴奏差 0.2 LU 內)
+           eq: { hp: 75, lowFreq: 200, lowGain: 0, lowQ: 1.0, midFreq: 2800, midGain: 0, midQ: 0.9, airFreq: 3500, airGain: 1.5, lp: 13000 } },
+  steel: { base: SAMPLE_ROOT + "guitar/steel/", gain: 1.6, velDb: 6, off: false,
+           eq: { hp: 75, lowFreq: 220, lowGain: -2, lowQ: 1.0, midFreq: 2800, midGain: -1.5, midQ: 0.9, airFreq: 5000, airGain: 0 } },
+};
+for (const G of Object.values(GTR_TONES)) Object.assign(G, { man: null, manPromise: null, buf: {}, len: {}, bus: null, busCtx: null });
+let gtrToneKey = "classical";
+const GT = () => GTR_TONES[gtrToneKey] || GTR_TONES.classical;
 const GTR_VERB_SEND = 0.45;
-let gtrMan = null, gtrManPromise = null;
-const gtrBuf = {};
-let gtrRR = {};
-function gtrLayerFor(vel){
-  const r = gtrMan ? gtrMan.velRanges : [[1, 127]];
+let gtrRR = {}, gtrLastOff = -1;
+function gtrLayerFor(G, vel){
+  const r = G.man ? G.man.velRanges : [[1, 127]];
   for (let i = 0; i < r.length; i++) if (vel <= r[i][1] + 0.5) return i + 1;
   return r.length;
 }
-// 音量 = 0.02 + 0.98 ×(力度/127)²(amp_veltrack 98)
-function gtrVelGain(vel){ const v = Math.max(1, Math.min(127, vel)) / 127; return 0.02 + 0.98 * v * v; }
-function loadGuitarManifest(){
-  if (!gtrManPromise) gtrManPromise = (async () => {
-    const r = await fetch(GTR_BASE + "manifest.json");
+// 音量 = (1 − t) + t ×(力度/127)²,t = amp_veltrack(鋼弦 98、尼龍 96);各層錄音已對齊成一樣大聲
+function gtrVelGain(G, vel){ const v = Math.max(1, Math.min(127, vel)) / 127, t = (G.man && G.man.ampVeltrack || 98) / 100; return 1 - t + t * v * v; }
+function loadGuitarManifest(G = GT()){
+  if (!G.manPromise) G.manPromise = (async () => {
+    const r = await fetch(G.base + "manifest.json");
     if (!r.ok) throw new Error("manifest " + r.status);
-    gtrMan = await r.json();
+    const man = await r.json();
     const roots = {};
-    for (const [n, i] of Object.entries(gtrMan.samples)) (roots[i.root] = roots[i.root] || []).push(n);
-    gtrMan._roots = roots; gtrMan._keys = Object.keys(roots).map(Number).sort((a, b) => a - b);
-    return gtrMan;
-  })().catch(e => { gtrManPromise = null; throw e; });
-  return gtrManPromise;
+    for (const [n, i] of Object.entries(man.samples)) (roots[i.root] = roots[i.root] || []).push(n);
+    man._roots = roots; man._keys = Object.keys(roots).map(Number).sort((a, b) => a - b);
+    G.man = man;
+    return man;
+  })().catch(e => { G.manPromise = null; throw e; });
+  return G.manPromise;
 }
-function gtrNearestRoot(m){ return gtrMan._keys.slice().sort((a, b) => Math.abs(a - m) - Math.abs(b - m) || a - b)[0]; }
+function gtrNearestRoot(G, m){ return G.man._keys.slice().sort((a, b) => Math.abs(a - m) - Math.abs(b - m) || a - b)[0]; }
+async function fetchGtrBuffer(G, name, lenSec){
+  const res = await fetchSample(G.base + name + ".flac");
+  if (!res.ok) throw new Error("HTTP " + res.status);
+  const buf = await audioCtx.decodeAudioData(await res.arrayBuffer());
+  const n = Math.min(buf.length, Math.round((lenSec || 1e9) * buf.sampleRate));
+  if (n === buf.length) return buf;
+  const out = audioCtx.createBuffer(buf.numberOfChannels, n, buf.sampleRate), fade = Math.min(n >> 2, Math.round(0.6 * buf.sampleRate));
+  for (let c = 0; c < buf.numberOfChannels; c++) {
+    const d = out.getChannelData(c); d.set(buf.getChannelData(c).subarray(0, n));
+    for (let i = 0; i < fade; i++) d[n - fade + i] *= Math.pow(Math.cos(i / fade * Math.PI / 2), 2);
+  }
+  return out;
+}
+/* 只載入這份伴奏用得到的:最近的錄音音高 × 用得到的力度層(力度有 ±4 的起伏)× 全部輪替,截短到需要的長度;有放弦聲的音色另載放弦聲 */
 async function loadGuitarFor(gen, onProgress){
-  await loadGuitarManifest();
+  const G = GT();
+  await loadGuitarManifest(G);
+  const lenSec = Math.min(12, barSecOf(Math.min(state.tempo, 200)) * 2 + 1.5);
   const names = new Set();
-  for (const b of gen.bars) for (const n of b.notes) for (const nm of gtrMan._roots[gtrNearestRoot(n.midi)]) names.add(nm);
-  const todo = [...names].filter(n => !gtrBuf[n]);
+  for (const b of gen.bars) for (const n of b.notes) {
+    const root = gtrNearestRoot(G, n.midi), Ls = new Set([gtrLayerFor(G, n.vel - 4), gtrLayerFor(G, n.vel + 4)]);
+    for (const nm of G.man._roots[root]) if (Ls.has(G.man.samples[nm].L)) names.add(nm);
+  }
+  if (G.off && G.man.off) for (const nm of Object.keys(G.man.off)) names.add(nm);
+  const todo = [...names].filter(n => !G.buf[n] || (G.man.samples[n] && G.len[n] < lenSec - 0.01));
   let done = 0;
   await runLimited(todo.map(name => async () => {
-    try { const res = await fetchSample(GTR_BASE + name + ".flac"); if (res.ok) gtrBuf[name] = await audioCtx.decodeAudioData(await res.arrayBuffer()); } catch (e) {}
+    try { G.buf[name] = await fetchGtrBuffer(G, name, G.man.samples[name] ? lenSec : null); G.len[name] = lenSec; } catch (e) {}
     done++; if (onProgress) onProgress(done / todo.length);
   }), SAMPLE_FETCH_CONCURRENCY);
-  if (todo.length && !todo.some(n => gtrBuf[n])) throw new Error("guitar samples failed");
+  if (todo.length && !todo.some(n => G.buf[n])) throw new Error("guitar samples failed");
 }
-function gtrSampleFor(m, Lr){
-  const root = gtrNearestRoot(m);
-  let list = gtrMan._roots[root].filter(n => gtrBuf[n]);
-  if (!list.length) {   // 還沒載到(播放中換調):用已載好、音高最近的取樣移調代替
-    const have = Object.keys(gtrBuf).filter(n => gtrMan.samples[n]);
+function gtrSampleFor(G, m, Lr){
+  const root = gtrNearestRoot(G, m);
+  let list = G.man._roots[root].filter(n => G.buf[n]);
+  if (!list.length) {   // 還沒載到(播放中換調/換音色):用已載好、音高最近的取樣移調代替
+    const have = Object.keys(G.buf).filter(n => G.man.samples[n]);
     if (!have.length) return null;
-    const near = have.reduce((a, b) => Math.abs(gtrMan.samples[b].root - m) < Math.abs(gtrMan.samples[a].root - m) ? b : a);
-    list = have.filter(n => gtrMan.samples[n].root === gtrMan.samples[near].root);
+    const near = have.reduce((a, b) => Math.abs(G.man.samples[b].root - m) < Math.abs(G.man.samples[a].root - m) ? b : a);
+    list = have.filter(n => G.man.samples[n].root === G.man.samples[near].root);
   }
-  const want = list.filter(n => gtrMan.samples[n].L === Lr);
-  const pool = want.length ? want : list;
-  const k = gtrRR[root + "-" + Lr] = (gtrRR[root + "-" + Lr] || 0) + 1;
+  // 力度層:沒有這層就找最近的層;同一個(音 × 層)的輪替依序輪流
+  const byL = l => list.filter(n => G.man.samples[n].L === l);
+  let pool = [];
+  for (let d = 0; d < 4 && !pool.length; d++) pool = byL(Lr - d).concat(d ? byL(Lr + d) : []);
+  if (!pool.length) pool = list;
+  const key = gtrToneKey + root + "-" + Lr, k = gtrRR[key] = (gtrRR[key] || 0) + 1;
   return pool[(k - 1) % pool.length];
 }
-/* 吉他 EQ(照 ScrollScore GTR_EQ.guitar):75Hz 高通、220Hz −2dB 箱子聲、2.8kHz −1.5dB */
-const GTR_EQ = { guitar: { hp: 75, lowFreq: 220, lowGain: -2, lowQ: 1.0, midFreq: 2800, midGain: -1.5, midQ: 0.9, airFreq: 5000, airGain: 0 } };
-let gtrBusIn = null, gtrBusCtx = null;
 function getGuitarBus(){
-  if (gtrBusIn && gtrBusCtx === audioCtx) return gtrBusIn;
-  const E = GTR_EQ.guitar;
+  const G = GT();
+  if (G.bus && G.busCtx === audioCtx) return G.bus;
+  const E = G.eq;
   const hp = audioCtx.createBiquadFilter(); hp.type = "highpass"; hp.frequency.value = E.hp; hp.Q.value = 0.6;
   const low = audioCtx.createBiquadFilter(); low.type = "peaking"; low.frequency.value = E.lowFreq; low.gain.value = E.lowGain; low.Q.value = E.lowQ;
   const mid = audioCtx.createBiquadFilter(); mid.type = "peaking"; mid.frequency.value = E.midFreq; mid.gain.value = E.midGain; mid.Q.value = E.midQ;
   const air = audioCtx.createBiquadFilter(); air.type = "highshelf"; air.frequency.value = E.airFreq; air.gain.value = E.airGain;
-  hp.connect(low); low.connect(mid); mid.connect(air); air.connect(masterGain);
-  gtrBusIn = hp; gtrBusCtx = audioCtx;
+  hp.connect(low); low.connect(mid); mid.connect(air);
+  if (E.lp) { const lp = audioCtx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = E.lp; lp.Q.value = 0.5; air.connect(lp); lp.connect(masterGain); }
+  else air.connect(masterGain);
+  G.bus = hp; G.busCtx = audioCtx;
   return hp;
 }
 const GTR_VERB = { seconds: 1.8, preDelay: 0.006, highpass: 160, wet: 0.3,
@@ -1501,32 +1534,46 @@ function gtrConnect(node, pan){
   out.connect(getGuitarBus());
   const s = audioCtx.createGain(); s.gain.value = GTR_VERB_SEND; node.connect(s); s.connect(getGuitarVerb());
 }
-/* str:第幾條弦(0 = 第 6 弦);releaseAt:同一條弦再撥、或換和弦時止音 */
-function playGuitarNote(m, when, releaseAt, vel, str, seed){
-  if (!gtrMan) return false;
+/* str:第幾條弦(0 = 第 6 弦);releaseAt:同一條弦再撥、或換和弦時止音;chordStop:是換和弦時左手放開(有放弦聲錄音的音色才加) */
+function playGuitarNote(m, when, releaseAt, vel, str, seed, chordStop){
+  const G = GT();
+  if (!G.man) return false;
   const now = audioCtx.currentTime;
   when = Math.max(when, now); releaseAt = Math.max(releaseAt, when + 0.04);
-  const name = gtrSampleFor(m, gtrLayerFor(vel));
+  const name = gtrSampleFor(G, m, gtrLayerFor(G, vel));
   if (!name) return false;
-  const info = gtrMan.samples[name], buf = gtrBuf[name];
+  const info = G.man.samples[name], buf = G.buf[name];
   const detune = ((seed || 0.5) - 0.5) * 3;   // ±1.5 音分,同一個音重彈不會一模一樣
-  const rate = Math.pow(2, (m - info.root + detune / 100) / 12);
-  const gain = GTR_GAIN * gtrVelGain(vel);
+  const rate = Math.pow(2, (m - info.root + (detune - (info.tune || 0)) / 100) / 12);   // tune:錄音的音準偏差(音分)
+  const gain = G.gain * gtrVelGain(G, vel);
   const fret = m - ACC_GTR_OPEN_MIDI[str];
   const relTau = fret === 0 && str <= 2 ? 0.09 : 0.05;   // 低音空弦比較難止住
   const bufEnd = when + buf.duration / rate;
   const end = Math.min(bufEnd, releaseAt + relTau * 7);
   const src = audioCtx.createBufferSource();
   src.buffer = buf; src.playbackRate.setValueAtTime(rate, when);
-  // 力度明暗:鋼弦只有兩層錄音,高頻架補 ±6dB
-  const hi = audioCtx.createBiquadFilter(); hi.type = "highshelf"; hi.frequency.value = Math.min(16000, 2200 * rate); hi.gain.value = (vel - 100) / 127 * 6;
+  // 力度明暗:高頻架 ±velDb(鋼弦只有兩層錄音補 ±6dB;尼龍四層本來就有音色差,±4dB)
+  const hi = audioCtx.createBiquadFilter(); hi.type = "highshelf"; hi.frequency.value = Math.min(16000, 2200 * rate); hi.gain.value = (vel - 100) / 127 * G.velDb;
   const g = audioCtx.createGain();
   g.gain.setValueAtTime(gain, when);
   if (releaseAt < end) g.gain.setTargetAtTime(0, releaseAt, relTau);
   src.connect(hi); hi.connect(g);
-  gtrConnect(g, (str - 2.5) * 0.048);   // 低音弦偏左、高音弦偏右
+  const pan = (str - 2.5) * 0.048;   // 低音弦偏左、高音弦偏右
+  gtrConnect(g, pan);
   src.start(when); src.stop(end + 0.05);
   scheduled.push(src);
+  // 放弦聲(原廠錄音,已對齊成比音符小約 26dB):換和弦、弦真的被左手止住時才加;同一個時間點只加一次
+  if (G.off && chordStop && G.man.off && releaseAt < bufEnd - 0.3 && releaseAt - when > 0.12 && Math.abs(releaseAt - gtrLastOff) > 0.03) {
+    const offs = Object.entries(G.man.off).filter(([n]) => G.buf[n]);
+    if (offs.length) {
+      gtrLastOff = releaseAt;
+      const [on] = offs.reduce((b, o) => Math.abs(o[1].root - m) < Math.abs(b[1].root - m) ? o : b);
+      const os = audioCtx.createBufferSource(); os.buffer = G.buf[on];
+      const og = audioCtx.createGain(); og.gain.value = gain * (0.6 + 0.4 * (seed != null ? seed : 0.5));
+      os.connect(og); gtrConnect(og, pan);
+      os.start(releaseAt); scheduled.push(os);
+    }
+  }
   return true;
 }
 /* 預備拍:短促的節拍器聲(第一下較高) */
@@ -1541,7 +1588,7 @@ function playClick(when, accent){
 }
 
 /* ══ 狀態與設定(存在 localStorage)══════════════════════════════ */
-const state = Object.assign({ inst: "piano", style: "pop", prog: 0, tonic: "C", lh: "", rh: "", gpat: "", tempo: 0, loops: 2, loop: true, countIn: true, showScore: true, setupOpen: false },
+const state = Object.assign({ inst: "piano", style: "pop", prog: 0, tonic: "C", lh: "", rh: "", gpat: "", gtone: "classical", tempo: 0, loops: 2, loop: true, countIn: true, showScore: true, setupOpen: false },
   (() => { try { return JSON.parse(localStorage.getItem(PREF_KEY) || "null") || {}; } catch (e) { return {}; } })());
 function savePrefs(){ try { localStorage.setItem(PREF_KEY, JSON.stringify(state)); } catch (e) {} }
 let curGen = null;
@@ -1555,6 +1602,8 @@ function normalizeState(){
   if (!st.piano.lh.includes(state.lh)) state.lh = pref.lh || st.piano.lh[0];
   if (!st.piano.rh.includes(state.rh)) state.rh = pref.rh || st.piano.rh[0];
   if (!st.guitar.includes(state.gpat)) state.gpat = pref.guitar || st.guitar[0];
+  if (!GTR_TONES[state.gtone]) state.gtone = "classical";
+  gtrToneKey = state.gtone;
   state.tempo = Math.max(40, Math.min(220, Math.round(+state.tempo) || pr.tempo || st.tempo));
   if (![1, 2, 3, 4].includes(+state.loops)) state.loops = 2;
   state.loops = +state.loops;
@@ -1588,7 +1637,9 @@ function renderControls(){
   $("selLH").innerHTML = st.piano.lh.map(k => opt(k, L(ACC_LH[k].zh, ACC_LH[k].en), k === state.lh)).join("");
   $("selRH").innerHTML = st.piano.rh.map(k => opt(k, L(ACC_RH[k].zh, ACC_RH[k].en), k === state.rh)).join("");
   $("selGtr").innerHTML = st.guitar.map(k => opt(k, L(ACC_GTR_PATTERNS[k].zh, ACC_GTR_PATTERNS[k].en), k === state.gpat)).join("");
-  $("fLH").hidden = $("fRH").hidden = isG; $("fGtr").hidden = !isG;
+  $("fLH").hidden = $("fRH").hidden = isG; $("fGtr").hidden = $("fTone").hidden = !isG;
+  $("selTone").innerHTML = [["classical", L("古典吉他(尼龍弦)", "Classical (nylon)")], ["steel", L("民謠吉他(鋼弦)", "Acoustic (steel)")]]
+    .map(([k, t]) => opt(k, t, k === state.gtone)).join("");
   $("inpTempo").value = state.tempo;
   $("selLoops").innerHTML = [1, 2, 3, 4].map(n => opt(n, "×" + n, n === state.loops)).join("");
   $("loopBtn").setAttribute("aria-pressed", String(!!state.loop));
@@ -1982,14 +2033,14 @@ function scheduleBar(gen, bi, t, tempo, loop, pass, vis){
     bar.notes.forEach((n, k) => {
       const r = seeded(bi * 131 + pass * 7919, k);
       const when = t + sw(n.at) * s16 + n.strum + r * 0.006;
-      let rel;
+      let rel, chordStop = false;
       const again = bar.notes.find(x => x.str === n.str && x.at > n.at);
       if (again) rel = t + sw(again.at) * s16;
       else if (last) rel = t + barSec + (loop ? 0.02 : 1.6);
       else if (sameNext) { const a2 = nextBarObj.notes.find(x => x.str === n.str); rel = t + barSec + (a2 ? sw(a2.at) * s16 : barSec); }
-      else rel = t + barSec + 0.02;   // 換和弦:左手放開
+      else { rel = t + barSec + 0.02; chordStop = true; }   // 換和弦:左手放開
       const vel = Math.max(30, Math.min(120, n.vel + (r - 0.5) * 8));
-      playGuitarNote(n.midi, when, rel, vel, n.str, r);
+      playGuitarNote(n.midi, when, rel, vel, n.str, r, chordStop);
       show(n, when);
     });
   }
@@ -2171,6 +2222,7 @@ $("selKey").addEventListener("change", e => { state.tonic = e.target.value; rend
 $("selLH").addEventListener("change", e => { state.lh = e.target.value; regenerate({ keepPlaying: true, keepSel: true }); });
 $("selRH").addEventListener("change", e => { state.rh = e.target.value; regenerate({ keepPlaying: true, keepSel: true }); });
 $("selGtr").addEventListener("change", e => { state.gpat = e.target.value; regenerate({ keepPlaying: true, keepSel: true }); });
+$("selTone").addEventListener("change", e => { state.gtone = e.target.value; renderControls(); regenerate({ keepPlaying: true, keepSel: true }); });
 $("selLoops").addEventListener("change", e => { state.loops = +e.target.value; regenerate({ keepPlaying: true, keepSel: true }); });
 function setTempo(v){
   state.tempo = Math.max(40, Math.min(220, Math.round(+v) || state.tempo));
@@ -2196,7 +2248,7 @@ applyLanguage(LANG);
 applyScoreToggle();
 regenerate({ now: true });
 // 先抓 manifest(很小),按播放時少等一點
-loadPianoManifest().catch(() => {}); loadGuitarManifest().catch(() => {});
+loadPianoManifest().catch(() => {}); loadGuitarManifest().catch(() => {});   // 目前選的吉他音色
 </script>
 </body>
 </html>

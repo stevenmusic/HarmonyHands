@@ -1,16 +1,16 @@
-// 用法:node render.mjs inst style prog tonic sec out.wav
+// 用法:node render.mjs inst style prog tonic sec out.wav [吉他指法] [吉他音色 classical|steel]
 import { open } from "./harness.mjs";
 import fs from "node:fs";
-const [inst, style, prog, tonic, sec, out] = process.argv.slice(2);
+const [inst, style, prog, tonic, sec, out, gpat = "", gtone = "classical"] = process.argv.slice(2);
 const { browser, page, errors } = await open();
-const info = await page.evaluate(async ([inst, style, prog, tonic]) => {
-  Object.assign(state, { inst, style, prog: +prog, tonic, lh: "", rh: "", gpat: "", tempo: 0 });
+const info = await page.evaluate(async ([inst, style, prog, tonic, gpat, gtone]) => {
+  Object.assign(state, { inst, style, prog: +prog, tonic, lh: "", rh: "", gpat, gtone, tempo: 0 });
   renderControls(); regenerate({ now: true });
   // D 和弦/吉他音高檢查:每個音 = 空弦 + 格數 + capo
   const g = curGen, bad = [];
   if (inst === "guitar") for (const b of g.bars) for (const n of b.notes) if (n.midi !== ACC_GTR_OPEN_MIDI[n.str] + b.shape.frets[n.str] + g.guide.capo) bad.push(n);
   return { title: g.title, tempo: state.tempo, bad: bad.length };
-}, [inst, style, prog, tonic]);
+}, [inst, style, prog, tonic, gpat, gtone]);
 const t0 = Date.now();
 const b64 = await page.evaluate(async sec => {
   const buf = await renderOffline(+sec);
