@@ -704,33 +704,58 @@ function accLetterFor(midi, ch, key){
 
 const ACC_DUR_TYPES = { 1: ["16th", 0], 2: ["eighth", 0], 3: ["eighth", 1], 4: ["quarter", 0], 6: ["quarter", 1], 8: ["half", 0], 12: ["half", 1], 16: ["whole", 0] };
 function esc(s){ return String(s).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;"); }
-function accNotesXml(evs, staff, voice, tab){
-  // 吉他也寫實際音高:OSMD 遇到 8vb 高音譜號(clef-octave-change -1)會自己畫高八度、播放照寫的音;加 <transpose> 反而會高八度
-  // evs:[{at, dur, pitches:[{midi,li}], lyric}],依時間排好;中間的空隙補休止符
-  const out = [];
+/* 一個聲部一小節的 MusicXML。照標準記譜:
+   - 空隙補休止符,休止符從拍點起、不跨過小節中間(二分休止符只放第 1、3 拍)
+   - 八分/十六分音符寫 <beam>:全是八分 → 半小節一組(4/4 慣例),有十六分 → 一拍一組;遇到休止符斷開(OSMD 預設不自動連桿)
+   - opts.stem:一個譜表兩個聲部時固定符桿方向(吉他:手指朝上、拇指低音朝下);opts.tab:六線譜(寫 string/fret,不寫 lyric)
+   吉他也寫實際音高:OSMD 遇到 8vb 高音譜號(clef-octave-change -1)會自己畫高八度、播放照寫的音;加 <transpose> 反而會高八度
+   evs:[{at, dur, pitches:[{midi,li}], lyric, arp}],依時間排好 */
+function accNotesXml(evs, staff, voice, opts = {}){
+  const items = [];
   let t = 0;
   const rest = d => {
     while (d > 0) {
       const piece = [16, 8, 4, 2, 1].find(x => x <= d && t % x === 0) || 1;
-      const [type] = ACC_DUR_TYPES[piece];
-      out.push(`<note><rest/><duration>${piece}</duration><voice>${voice}</voice><type>${type}</type>${staff ? `<staff>${staff}</staff>` : ""}</note>`);
+      items.push({ rest: true, at: t, dur: piece });
       t += piece; d -= piece;
     }
   };
   for (const e of evs) {
     if (e.at > t) rest(e.at - t);
-    const [type, dots] = ACC_DUR_TYPES[e.dur];
-    e.pitches.forEach((p, i) => {
-      const sp = accSpell(p);
-      out.push(`<note>${i ? "<chord/>" : ""}<pitch><step>${sp.step}</step>${sp.alter ? `<alter>${sp.alter}</alter>` : ""}<octave>${sp.octave}</octave></pitch>`
-        + `<duration>${e.dur}</duration><voice>${voice}</voice><type>${type}</type>${"<dot/>".repeat(dots)}${staff ? `<staff>${staff}</staff>` : ""}`
-        + (tab ? `<notations><technical><string>${6 - p.str}</string><fret>${p.fret}</fret></technical></notations>` : "")
-        + (!tab && !i && e.lyric ? `<lyric number="1"><syllabic>single</syllabic><text>${esc(e.lyric)}</text></lyric>` : "") + `</note>`);
-    });
+    items.push(e);
     t = e.at + e.dur;
   }
   if (t < 16) rest(16 - t);
-  return out.join("");
+  const beam = new Map();
+  if (!opts.tab) {
+    const G = items.some(x => !x.rest && x.dur === 1) ? 4 : 8;
+    let run = [];
+    const flush = () => { if (run.length >= 2) run.forEach((x, i) => beam.set(x, i === 0 ? "begin" : i === run.length - 1 ? "end" : "continue")); run = []; };
+    for (const x of items) {
+      if (x.rest || x.dur > 2) { flush(); continue; }
+      if (run.length && Math.floor(run[0].at / G) !== Math.floor(x.at / G)) flush();
+      run.push(x);
+    }
+    flush();
+  }
+  const st = staff ? `<staff>${staff}</staff>` : "";
+  return items.map(x => {
+    const [type, dots] = ACC_DUR_TYPES[x.dur];
+    // 兩個聲部共用一個譜表時,上聲部的休止符移到譜表上半(不壓到下聲部的低音),下聲部移到下半。
+    // 吉他 8vb 譜號的位置寫實際音高(E4 = 譜上最上面那一間),寫成記譜音高 OSMD 會再高一個八度
+    if (x.rest) return `<note><rest>${opts.restAt ? `<display-step>${opts.restAt[0]}</display-step><display-octave>${opts.restAt[1]}</display-octave>` : ""}</rest><duration>${x.dur}</duration><voice>${voice}</voice><type>${type}</type>${"<dot/>".repeat(dots)}${st}</note>`;
+    const b = beam.get(x);
+    return x.pitches.map((p, i) => {
+      const sp = accSpell(p);
+      const nota = (opts.tab ? `<technical><string>${6 - p.str}</string><fret>${p.fret}</fret></technical>` : "") + (x.arp && !opts.tab ? "<arpeggiate/>" : "");
+      return `<note>${i ? "<chord/>" : ""}<pitch><step>${sp.step}</step>${sp.alter ? `<alter>${sp.alter}</alter>` : ""}<octave>${sp.octave}</octave></pitch>`
+        + `<duration>${x.dur}</duration><voice>${voice}</voice><type>${type}</type>${"<dot/>".repeat(dots)}`
+        + (opts.stem ? `<stem>${opts.stem}</stem>` : "") + st
+        + (b && !i ? `<beam number="1">${b}</beam>` + (x.dur === 1 ? `<beam number="2">${b}</beam>` : "") : "")
+        + (nota ? `<notations>${nota}</notations>` : "")
+        + (!opts.tab && !i && x.lyric ? `<lyric number="1"><syllabic>single</syllabic><text>${esc(x.lyric)}</text></lyric>` : "") + `</note>`;
+    }).join("");
+  }).join("");
 }
 function accHarmonyXml(ch){
   const ra = accAlterOf(ch.rootLi, ch.rootPc), ba = accAlterOf(ch.bass.li, ch.bass.pc);
@@ -843,8 +868,17 @@ function accGenerate(opts){
       evs.forEach(e => e.pitches.forEach((p, i) => notes.push({ at: e.at, dur: e.dur, midi: p.midi, str: p.str, tok: last ? "S" : e.tok === "T'" ? "T" : e.tok,
         strum: last ? i * 0.016 : 0,
         vel: last ? 84 - i : (e.tok === "T" || e.tok === "T'" ? (e.at === 0 ? 92 : 84) : (e.at % 4 === 0 ? 80 : 74)) })));
-      // 上面五線譜(實際音高 + 8vb 譜號、T123),下面六線譜(格數照指型、相對移調夾)
-      return { chord: ch, shape, notes, xml: [accNotesXml(evs, 1, 1), accNotesXml(evs, 2, 5, true)] };
+      // 上面五線譜(實際音高 + 8vb 譜號、T123),下面六線譜(格數照指型、相對移調夾)。
+      // 五線譜照古典/指彈吉他的標準寫法分兩個聲部:手指(1 2 3)符桿朝上,拇指低音(T)符桿朝下、時值寫到下一個低音(弦一直在響);
+      // 結尾的掃弦寫成一個和弦加琶音記號
+      let staffXml;
+      if (last) staffXml = [accNotesXml(evs.map(e => ({ ...e, arp: true })), 1, 1)];
+      else {
+        const isT = e => e.tok === "T" || e.tok === "T'";
+        const bassE = evs.filter(isT).map((e, i, a) => ({ ...e, dur: (a[i + 1] ? a[i + 1].at : 16) - e.at }));
+        staffXml = [accNotesXml(evs.filter(e => !isT(e)), 1, 1, { stem: "up", restAt: "E4" }), accNotesXml(bassE, 1, 2, { stem: "down", restAt: "F3" })];
+      }
+      return { chord: ch, shape, notes, xml: staffXml.concat([accNotesXml(evs, 2, 5, { tab: true })]) };
     };
     passChords.forEach((ch, i) => passBars.push(build(ch, plan.shapes[i], false)));
     endBar = build(endChord, plan.shapes[plan.shapes.length - 1], true);
@@ -875,11 +909,18 @@ function accGenerate(opts){
     + `<sound tempo="${opts.tempo}"/></direction>`;
   // 移調夾標在第一小節第二個音上方(跟速度記號放在一起會黏成一串)
   const capoXml = isGtr && plan.capo ? `<direction placement="above"><direction-type><words>Capo ${plan.capo}</words></direction-type></direction>` : "";
+  // 鋼琴有踩踏板的型態標踏板記號(每小節換一次 = 換和弦時換踏板,跟播放一樣);第一小節標力度 mp
+  const pedalPat = !isGtr && ACC_PIANO_PATTERNS[guide.pattern].pedal;
+  const pedal = type => `<direction placement="below"><direction-type><pedal type="${type}" line="yes"/></direction-type><staff>2</staff></direction>`;
+  const dyn = `<direction placement="below"><direction-type><dynamics><mp/></dynamics></direction-type><staff>1</staff></direction>`;
+  const backup = `<backup><duration>16</duration></backup>`;
   const body = bars.map((m, i) => {
     const last = i === bars.length - 1;
-    const x0 = i === 0 && capoXml ? m.xml[0].replace("</note>", "</note>" + capoXml) : m.xml[0];
-    return `<measure number="${i + 1}">${i === 0 ? attrs + tempoXml : ""}${accHarmonyXml(m.chord)}${x0}`
-      + (m.xml[1] ? `<backup><duration>16</duration></backup>${m.xml[1]}` : "")
+    const parts = m.xml.slice();
+    if (i === 0 && capoXml) parts[0] = parts[0].replace("</note>", "</note>" + capoXml);
+    if (i === 0) parts[0] = dyn + parts[0];
+    if (pedalPat) parts[1] = pedal(i === 0 ? "start" : "change") + parts[1] + (last ? pedal("stop") : "");
+    return `<measure number="${i + 1}">${i === 0 ? attrs + tempoXml : ""}${accHarmonyXml(m.chord)}${parts.join(backup)}`
       + (last ? `<barline location="right"><bar-style>light-heavy</bar-style></barline>` : "") + `</measure>`;
   }).join("\n");
   const xml = `<?xml version="1.0" encoding="UTF-8"?>
@@ -1710,6 +1751,10 @@ async function renderScore(){
       followCursor: false, cursorsOptions: [{ type: 0, color: "#F2B94B", alpha: 0.55, follow: false }],
       defaultColorMusic: "#16130D", pageBackgroundColor: "#FFFDF600"
     });
+    // 和弦記號的升降號用 ♭ ♯(標準寫法),不是 b #
+    if (osmd && osmd.EngravingRules && osmd.EngravingRules.resetChordAccidentalTexts && !osmd.__acc) {
+      osmd.EngravingRules.resetChordAccidentalTexts(osmd.EngravingRules.ChordAccidentalTexts, true); osmd.__acc = true;
+    }
     await osmd.load(xml);
     if (xml !== curGen.xml) return;   // 載入期間又改了設定
     osmdZoom = osmd.zoom = osmdZoomFor();
