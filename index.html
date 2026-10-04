@@ -1408,10 +1408,12 @@ function playPianoNote(m, when, keyUp, damperAt, vel, pedal){
   return true;
 }
 
-/* ── 民謠吉他:FSS Steel-String Acoustic Guitar(ScrollScore guitar/steel/,FreePats)──
-   E2~C6 每個半音都有錄音,取最近的 root;兩層力度(1-85 / 86-127) */
-const GTR_BASE = SAMPLE_ROOT + "guitar/steel/";
-let GTR_GAIN = 1.6;
+/* ── 古典吉他:Philharmonia Orchestra(CC BY-SA 3.0),ScrollScore guitar/classical/ ──
+   E2~B4 每個半音 + D5~E5、G5、G♯5、C6 都有錄音,取最近的 root;強/弱兩層(1-79 / 80-127)。
+   ScrollScore guitar/build/philharmonia_build.py 處理(65Hz 高通、對齊起音、響度對齊),錄音的音準偏差寫在 manifest 的 tune(音分),播放時校正。
+   民謠吉他(FSS 鋼弦)使用者聽過覺得不好聽,已拿掉 */
+const GTR_BASE = SAMPLE_ROOT + "guitar/classical/";
+let GTR_GAIN = 0.86;   // 實測跟原本的民謠吉他一樣大聲(同一段伴奏差 0.2 LU 內)
 const GTR_VERB_SEND = 0.45;
 let gtrMan = null, gtrManPromise = null;
 const gtrBuf = {};
@@ -1421,8 +1423,8 @@ function gtrLayerFor(vel){
   for (let i = 0; i < r.length; i++) if (vel <= r[i][1] + 0.5) return i + 1;
   return r.length;
 }
-// 音量 = 0.02 + 0.98 ×(力度/127)²(amp_veltrack 98)
-function gtrVelGain(vel){ const v = Math.max(1, Math.min(127, vel)) / 127; return 0.02 + 0.98 * v * v; }
+// 音量 = 0.04 + 0.96 ×(力度/127)²(amp_veltrack 96,兩層錄音已對齊成一樣大聲)
+function gtrVelGain(vel){ const v = Math.max(1, Math.min(127, vel)) / 127; return 0.04 + 0.96 * v * v; }
 function loadGuitarManifest(){
   if (!gtrManPromise) gtrManPromise = (async () => {
     const r = await fetch(GTR_BASE + "manifest.json");
@@ -1462,8 +1464,8 @@ function gtrSampleFor(m, Lr){
   const k = gtrRR[root + "-" + Lr] = (gtrRR[root + "-" + Lr] || 0) + 1;
   return pool[(k - 1) % pool.length];
 }
-/* 吉他 EQ(照 ScrollScore GTR_EQ.guitar):75Hz 高通、220Hz −2dB 箱子聲、2.8kHz −1.5dB */
-const GTR_EQ = { guitar: { hp: 75, lowFreq: 220, lowGain: -2, lowQ: 1.0, midFreq: 2800, midGain: -1.5, midQ: 0.9, airFreq: 5000, airGain: 0 } };
+/* 吉他 EQ:75Hz 高通、3.5kHz 以上 +1.5dB(尼龍弦 3~8kHz 比鋼弦暗)、13kHz 低通(原檔是 MP3 96kbps,13kHz 以上只有編碼雜訊) */
+const GTR_EQ = { guitar: { hp: 75, lowFreq: 200, lowGain: 0, lowQ: 1.0, midFreq: 2800, midGain: 0, midQ: 0.9, airFreq: 3500, airGain: 1.5, lp: 13000 } };
 let gtrBusIn = null, gtrBusCtx = null;
 function getGuitarBus(){
   if (gtrBusIn && gtrBusCtx === audioCtx) return gtrBusIn;
@@ -1472,7 +1474,8 @@ function getGuitarBus(){
   const low = audioCtx.createBiquadFilter(); low.type = "peaking"; low.frequency.value = E.lowFreq; low.gain.value = E.lowGain; low.Q.value = E.lowQ;
   const mid = audioCtx.createBiquadFilter(); mid.type = "peaking"; mid.frequency.value = E.midFreq; mid.gain.value = E.midGain; mid.Q.value = E.midQ;
   const air = audioCtx.createBiquadFilter(); air.type = "highshelf"; air.frequency.value = E.airFreq; air.gain.value = E.airGain;
-  hp.connect(low); low.connect(mid); mid.connect(air); air.connect(masterGain);
+  const lp = audioCtx.createBiquadFilter(); lp.type = "lowpass"; lp.frequency.value = E.lp; lp.Q.value = 0.5;
+  hp.connect(low); low.connect(mid); mid.connect(air); air.connect(lp); lp.connect(masterGain);
   gtrBusIn = hp; gtrBusCtx = audioCtx;
   return hp;
 }
@@ -1510,7 +1513,7 @@ function playGuitarNote(m, when, releaseAt, vel, str, seed){
   if (!name) return false;
   const info = gtrMan.samples[name], buf = gtrBuf[name];
   const detune = ((seed || 0.5) - 0.5) * 3;   // ±1.5 音分,同一個音重彈不會一模一樣
-  const rate = Math.pow(2, (m - info.root + detune / 100) / 12);
+  const rate = Math.pow(2, (m - info.root + (detune - (info.tune || 0)) / 100) / 12);   // tune:錄音的音準偏差(音分)
   const gain = GTR_GAIN * gtrVelGain(vel);
   const fret = m - ACC_GTR_OPEN_MIDI[str];
   const relTau = fret === 0 && str <= 2 ? 0.09 : 0.05;   // 低音空弦比較難止住
@@ -1518,8 +1521,8 @@ function playGuitarNote(m, when, releaseAt, vel, str, seed){
   const end = Math.min(bufEnd, releaseAt + relTau * 7);
   const src = audioCtx.createBufferSource();
   src.buffer = buf; src.playbackRate.setValueAtTime(rate, when);
-  // 力度明暗:鋼弦只有兩層錄音,高頻架補 ±6dB
-  const hi = audioCtx.createBiquadFilter(); hi.type = "highshelf"; hi.frequency.value = Math.min(16000, 2200 * rate); hi.gain.value = (vel - 100) / 127 * 6;
+  // 力度明暗:只有強/弱兩層錄音,高頻架補 ±4dB(跟 ScrollScore 尼龍弦一樣)
+  const hi = audioCtx.createBiquadFilter(); hi.type = "highshelf"; hi.frequency.value = Math.min(16000, 2200 * rate); hi.gain.value = (vel - 100) / 127 * 4;
   const g = audioCtx.createGain();
   g.gain.setValueAtTime(gain, when);
   if (releaseAt < end) g.gain.setTargetAtTime(0, releaseAt, relTau);
@@ -2127,13 +2130,13 @@ $("themeToggle").onclick = () => { try { localStorage.setItem(THEME_KEY, themeIs
 function renderCredits(){
   $("credits").innerHTML = L(
     `<b>音源與授權</b><br>鋼琴:Salamander Grand Piano V3(Alexander Holm,<a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC-BY 3.0</a>)・
-     吉他:FSS Steel-String Acoustic Guitar(FreePats,GPL-3.0 + FreePats sound exception)・
+     古典吉他:Philharmonia Orchestra(<a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener">CC BY-SA 3.0</a>,處理後同授權)・
      取樣經 <a href="https://github.com/stevenmusic/ScrollScore" target="_blank" rel="noopener">ScrollScore</a> 整理後直接讀取<br>
      和弦指法:<a href="https://github.com/tombatossals/chords-db" target="_blank" rel="noopener">chords-db</a>(MIT © 2016 David Rubert)・
      樂譜:<a href="https://opensheetmusicdisplay.org/" target="_blank" rel="noopener">OpenSheetMusicDisplay</a>(BSD-3)<br>
      同系列:<a href="https://stevenmusic.github.io/HarmonyMap/" target="_blank" rel="noopener">HarmonyMap 和弦與音階地圖</a>(看和弦是什麼)・HarmonyHands(學和弦怎麼彈)`,
     `<b>Sounds &amp; licences</b><br>Piano: Salamander Grand Piano V3 (Alexander Holm, <a href="https://creativecommons.org/licenses/by/3.0/" target="_blank" rel="noopener">CC-BY 3.0</a>) ·
-     Guitar: FSS Steel-String Acoustic Guitar (FreePats, GPL-3.0 + FreePats sound exception) ·
+     Classical guitar: Philharmonia Orchestra (<a href="https://creativecommons.org/licenses/by-sa/3.0/" target="_blank" rel="noopener">CC BY-SA 3.0</a>, processed files same licence) ·
      samples prepared by <a href="https://github.com/stevenmusic/ScrollScore" target="_blank" rel="noopener">ScrollScore</a><br>
      Chord fingerings: <a href="https://github.com/tombatossals/chords-db" target="_blank" rel="noopener">chords-db</a> (MIT © 2016 David Rubert) ·
      Score: <a href="https://opensheetmusicdisplay.org/" target="_blank" rel="noopener">OpenSheetMusicDisplay</a> (BSD-3)<br>

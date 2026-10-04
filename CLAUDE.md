@@ -10,17 +10,20 @@
 
 ## 絕不能做的事
 - **不要拆檔**:單一 index.html(跟 ScrollScore / HarmonyMap 同一套部署)。只做網頁,不上架 App(使用者說明)。測試工具放 tools/,不屬於網頁本體
-- **吉他音源只用每個音都有錄音的**(使用者要求「取樣音高不夠密集的就不要」):MF Concert Guitar(8 個音)、FreePats 西班牙古典吉他(缺音)都不用。
+- **吉他音源只用每個音都有錄音的**(使用者要求「取樣音高不夠密集的就不要」):MF Concert Guitar(8 個音)、FreePats 西班牙古典吉他(缺音)、
+  tonejs-instrument-guitar-nylon(28 個音、間距到 3 半音、一層力度、尾巴被截)都不用。
   網頁也算散布取樣(瀏覽器會下載取樣檔):換音源前要確認授權允許在網頁上當樂器播放
 - **不要把取樣複製進來**:音色直接從 `https://raw.githubusercontent.com/stevenmusic/ScrollScore/main/` 讀(公開 repo,可跨網域)
   - 鋼琴 `piano/`:manifest.json + `pf-<音名>-v<層>.flac`,音名用 Cs/Ds/Fs/Gs/As;30 個取樣音每 3 個半音一個(A0、C1、D♯1…);16 層力度(velRanges);
     音量 = 0.015 + 0.985×(力度/127)²;manifest 的 tune 是音分校正;只載入用得到的(音 × 力度層),截短到需要的長度
-  - 民謠吉他 `guitar/steel/`:每個半音都有錄音,取最近的 root;兩層力度(1-85 / 86-127);音量 = 0.02 + 0.98×(力度/127)²
+  - 古典吉他 `guitar/classical/`:Philharmonia Orchestra(CC BY-SA 3.0),E2~B4 每個半音 + D5~E5、G5、G♯5、C6,取最近的 root;兩層力度(1-79 / 80-127);
+    音量 = 0.04 + 0.96×(力度/127)²;manifest 的 tune 是音分校正;GTR_GAIN 0.86;EQ 3.5kHz +1.5dB、13kHz 低通(原檔 MP3 96kbps)。
+    民謠吉他(FSS 鋼弦)使用者聽過說「音色不好」,不要再加回來
   - 下載過的存 Cache Storage(SAMPLE_CACHE,取樣改了要加版本號)
-- **不要用 Tone.js 單層鋼琴或純合成音色**(預備拍的節拍器聲例外)。古典吉他先不做
+- **不要用 Tone.js 單層鋼琴或純合成音色**(預備拍的節拍器聲例外)
 - **混音照 ScrollScore**:PIANO_EQ、GTR_EQ.guitar、buildPianoHallIR 殘響(PIANO_VERB / GTR_VERB)、pianoHalfPedalTau、pianoDamperTau、
   MASTER(響度壓縮 + makeup)、真峰值限幅器 SSMasterLimiter(AudioWorklet,原始碼照抄)。響度目標 −14 ~ −11 LUFS、真峰值 ≤ −1 dBTP;
-  實測鋼琴 −11.2 ~ −14.6(搖滾最大聲、民謠 Boom-chick 最小聲)、吉他 −11.6 ~ −12.8、真峰值 ≤ −1.5(伴奏比一般樂曲稀疏,PIANO_GAIN 從 1.5 提到 1.9)
+  實測鋼琴 −11.2 ~ −14.6(搖滾最大聲、民謠 Boom-chick 最小聲)、古典吉他 −12.1 ~ −13.4、真峰值 ≤ −1.5(伴奏比一般樂曲稀疏,PIANO_GAIN 從 1.5 提到 1.9)
 - **吉他 MusicXML 寫實際音高 + 高音譜號下方 8(`<clef-octave-change>-1`)**,不要加 `<transpose>`:OSMD 會自己把 8vb 譜號的音畫高八度;
   加了 transpose 播放會高八度。播放用的音符表(curGen.bars)跟 XML 同一份資料產生,D 和弦的 T 是 D3 = MIDI 50
 - **吉他左手手指一律先查 FINGER_BOOK**(與 HarmonyMap index.html 完全相同,chords-db,MIT © 2016 David Rubert):

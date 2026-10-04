@@ -27,7 +27,7 @@
 | 項目 | 來源 | 授權 |
 |---|---|---|
 | 鋼琴 | Salamander Grand Piano V3(Alexander Holm),經 ScrollScore 整理 | CC-BY 3.0 |
-| 民謠吉他 | FSS Steel-String Acoustic Guitar(FreePats),經 ScrollScore 整理 | GPL-3.0 + FreePats sound exception |
+| 古典吉他 | [Philharmonia Orchestra sound samples](https://philharmonia.co.uk/resources/sound-samples/),經 ScrollScore 整理(`guitar/classical/`) | CC BY-SA 3.0(處理後同授權) |
 | 吉他左手指法 | [chords-db](https://github.com/tombatossals/chords-db)(© 2016 David Rubert),與 HarmonyMap 同一份 FINGER_BOOK | MIT |
 | 樂譜顯示 | [OpenSheetMusicDisplay](https://opensheetmusicdisplay.org/) 2.0.0 | BSD-3 |
 
