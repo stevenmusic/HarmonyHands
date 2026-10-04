@@ -476,7 +476,8 @@ function T(k, vars){ let s = (I18N[LANG] && I18N[LANG][k]) || I18N.zh[k] || k; i
    end:結尾補的主和弦(沒寫就照層次:基本 I / i、全是七和弦 Imaj7 / i7,進階 Imaj9 / i9,藍調 I7 / I13)。
    piano.lh / piano.rh / guitar:這個風格可選的型態,第一個是預設;進行的 pref 可以換掉預設(例:拉丁裡的佛朗明哥不用巴薩諾瓦低音)。
    swing:播放時八分音符前長後短(譜上照慣例寫平均八分 + 「Swing」);voicing "rootless":右手用爵士無根音聲位 */
-const ACC_FLAMENCO = { tempo: 96, pref: { lh: "broken158", rh: "half", guitar: "arp8" } };
+// 佛朗明哥:吉他只用 Am 家族(por arriba,Am-G-F-E)或 Dm 家族(por medio,Dm-C-B♭-A)的指型,其他調用移調夾
+const ACC_FLAMENCO = { tempo: 96, pref: { lh: "broken158", rh: "half", guitar: "arp8" }, gtrFamily: [9, 2] };
 const ACC_STYLES = [
   { id: "pop", zh: "流行", en: "Pop", tempo: 84,
     progs: [
@@ -524,10 +525,10 @@ const ACC_STYLES = [
       { ch: "i bVII bVI bVII", minor: true, zh: "小調 i-♭VII-♭VI-♭VII(Am-G-F-G)", en: "Minor i–♭VII–♭VI–♭VII (Am–G–F–G)" },
       { ch: "I bVII IV I bVI bVII IV V", zh: "1-♭7-4-1-♭6-♭7-4-5(C-B♭-F-C-A♭-B♭-F-G)", en: "I–♭VII–IV–I–♭VI–♭VII–IV–V (C–B♭–F–C–A♭–B♭–F–G)" },
       { lv: "a", ch: "i7 bVIIadd9 bVImaj7 V7#9", minor: true, end: "i7", zh: "小調搖滾・7♯9(Am7-Gadd9-Fmaj7-E7♯9)", en: "Minor rock with 7♯9 (Am7–Gadd9–Fmaj7–E7♯9)" },
-      { lv: "a", ch: "I7#9 IV9 I7#9 V7#9", end: "I7#9", zh: "放克搖滾 7♯9(C7♯9-F9-C7♯9-G7♯9)", en: "Funk rock 7♯9 (C7♯9–F9–C7♯9–G7♯9)" },
-      { lv: "a", ch: "vi7 IVmaj7 Iadd9 V/3 vi7 IVmaj7 bVIIadd9 V7sus4", end: "Iadd9", zh: "抒情搖滾 6-4-1-5(Am7-Fmaj7-Cadd9-G/B-Am7-Fmaj7-B♭add9-G7sus4)",
-        en: "Power ballad vi–IV–I–V (Am7–Fmaj7–Cadd9–G/B–Am7–Fmaj7–B♭add9–G7sus4)" } ],
-    piano: { lh: ["rock8", "oct332", "hold"], rh: ["quarter", "eighths", "pop332"] }, guitar: ["boom", "alt8", "travis"] },
+      { lv: "a", ch: "I7#9 IV9 I7#9 V7#9", end: "I7#9", capo: false, pref: { guitar: "comp4" }, zh: "放克搖滾 7♯9(C7♯9-F9-C7♯9-G7♯9)", en: "Funk rock 7♯9 (C7♯9–F9–C7♯9–G7♯9)" },
+      { lv: "a", ch: "vi7 IVmaj7 Iadd9 V/3 vi7 IVmaj7 bVIIsus2 V7sus4", end: "Iadd9", zh: "抒情搖滾 6-4-1-5(Am7-Fmaj7-Cadd9-G/B-Am7-Fmaj7-B♭sus2-G7sus4)",
+        en: "Power ballad vi–IV–I–V (Am7–Fmaj7–Cadd9–G/B–Am7–Fmaj7–B♭sus2–G7sus4)" } ],
+    piano: { lh: ["rock8", "oct332", "hold"], rh: ["quarter", "eighths", "pop332"] }, guitar: ["boom", "alt8", "travis", "comp4"] },
   { id: "blues", zh: "藍調", en: "Blues", tempo: 100, swing: true,
     progs: [
       { ch: "I7 IV7 I7 V7", zh: "4 小節藍調(C7-F7-C7-G7)", en: "4-bar blues (C7–F7–C7–G7)" },
@@ -536,8 +537,8 @@ const ACC_STYLES = [
       { ch: "I7 IV7 I7 I7 IV7 IV7 I7 I7 V7 IV7 I7 V7", zh: "12 小節藍調・第 2 小節先到 IV(C7-F7-C7×2-F7×2-C7×2-G7-F7-C7-G7)",
         en: "12-bar blues, quick change (C7–F7–C7×2–F7×2–C7×2–G7–F7–C7–G7)" },
       { lv: "a", ch: "I13 VI7b9 ii9 V13", zh: "藍調回轉(C13-A7♭9-Dm9-G13)", en: "Blues turnaround (C13–A7♭9–Dm9–G13)" },
-      { lv: "a", ch: "I9 V7#9 IV9 #ivo7 I9 VI7b9 ii9 V13", zh: "8 小節爵士藍調(C9-G7♯9-F9-F♯dim7-C9-A7♭9-Dm9-G13)", en: "8-bar jazz blues (C9–G7♯9–F9–F♯dim7–C9–A7♭9–Dm9–G13)" },
-      { lv: "a", ch: "I13 IV9 I13 I7#9 IV9 #ivo7 I13 VI7b9 ii9 V13 I13 V7b9", zh: "12 小節爵士藍調(C13-F9-C13-C7♯9-F9-F♯dim7-C13-A7♭9-Dm9-G13-C13-G7♭9)",
+      { lv: "a", ch: "I9 V7#9 IV9 #ivo7 I9 VI7b9 ii9 V13", pref: { guitar: "comp4" }, zh: "8 小節爵士藍調(C9-G7♯9-F9-F♯dim7-C9-A7♭9-Dm9-G13)", en: "8-bar jazz blues (C9–G7♯9–F9–F♯dim7–C9–A7♭9–Dm9–G13)" },
+      { lv: "a", ch: "I13 IV9 I13 I7#9 IV9 #ivo7 I13 VI7b9 ii9 V13 I13 V7b9", pref: { guitar: "comp4" }, zh: "12 小節爵士藍調(C13-F9-C13-C7♯9-F9-F♯dim7-C13-A7♭9-Dm9-G13-C13-G7♭9)",
         en: "12-bar jazz blues (C13–F9–C13–C7♯9–F9–F♯dim7–C13–A7♭9–Dm9–G13–C13–G7♭9)" } ],
     piano: { lh: ["boogie", "walking", "shell"], rh: ["offbeat", "charleston", "block"] }, guitar: ["travis", "boom", "comp4"] },
   { id: "jazz", zh: "爵士", en: "Jazz", tempo: 116, swing: true, voicing: "rootless",
@@ -618,7 +619,7 @@ const ACC_RH = {
   anticip:    { zh: "切分短奏(1、2&、4)", en: "Syncopated stabs (1, 2&, 4)", hits: [[0, 4], [6, 2], [12, 4]], tipZh: "右手第 1 拍、第 2 拍後半、第 4 拍短短地彈。", tipEn: "Short chords on 1, the & of 2, and 4." },
   arp:        { zh: "右手分解(八分)", en: "RH arpeggio (eighths)", arp: true, tipZh: "右手把和弦音一個一個上下彈。", tipEn: "The RH plays the chord tones one by one, up and down." },
 };
-// 吉他右手:每小節 16 格(十六分音符),[起點, 長度, 手指];T' = 交替低音(第二條低音弦);「T+2」= 拇指和中指同時(掐弦);「123」= 三指同時
+// 吉他右手:每小節 16 格(十六分音符),[起點, 長度, 手指];T' = 交替低音(第二條低音弦;altLow = 優先換到下方五度);「T+2」= 拇指和中指同時(掐弦);「123」= 三指同時
 const ACC_GTR_PATTERNS = {
   quarter: { zh: "T 1 2 3(四分,入門)", en: "T 1 2 3 (quarters, beginner)",
              seq: [[0,4,"T"],[4,4,"1"],[8,4,"2"],[12,4,"3"]] },
@@ -631,11 +632,11 @@ const ACC_GTR_PATTERNS = {
                    [8,1,"T'"],[9,1,"1"],[10,1,"2"],[11,1,"1"],[12,1,"3"],[13,1,"1"],[14,1,"2"],[15,1,"1"]] },
   travis:  { zh: "Travis 指法(拇指每拍交替)", en: "Travis picking (thumb on every beat)",
              seq: [[0,2,"T+2"],[2,2,"1"],[4,2,"T'"],[6,2,"2"],[8,2,"T"],[10,2,"1"],[12,2,"T'"],[14,2,"2"]] },
-  boom:    { zh: "低音-和弦(T、123 交替)", en: "Bass–chord (T, 123)",
+  boom:    { zh: "低音-和弦(T、123 交替)", en: "Bass–chord (T, 123)", altLow: true,
              seq: [[0,4,"T"],[4,4,"123"],[8,4,"T'"],[12,4,"123"]] },
-  comp4:   { zh: "四拍和弦(低音 + 和弦)", en: "Four-to-the-bar chords",
+  comp4:   { zh: "四拍和弦(低音 + 和弦)", en: "Four-to-the-bar chords", altLow: true,
              seq: [[0,4,"T+123"],[4,4,"123"],[8,4,"T'+123"],[12,4,"123"]] },
-  bossa:   { zh: "巴薩諾瓦(拇指 1、3 拍,和弦切分)", en: "Bossa nova (thumb 1 & 3, syncopated chords)",
+  bossa:   { zh: "巴薩諾瓦(拇指 1、3 拍,和弦切分)", en: "Bossa nova (thumb 1 & 3, syncopated chords)", altLow: true,
              seq: [[0,4,"T+123"],[6,2,"123"],[8,4,"T'"],[12,4,"123"]] },
 };
 const ACC_MAJ = [0, 2, 4, 5, 7, 9, 11];
@@ -660,11 +661,11 @@ const ACC_QUAL = {
   sus4:   { t: "1 4 5",         sym: "sus4",   kind: "suspended-fourth",   rh: "1 4 5" },
   sus2:   { t: "1 2 5",         sym: "sus2",   kind: "suspended-second",   rh: "1 2 5" },
   "7":    { t: "1 3 5 b7",      sym: "7",      kind: "dominant",           rh: "1 3 5 b7" },
-  maj7:   { t: "1 3 5 7",       sym: "maj7",   kind: "major-seventh",      rh: "1 3 5 7" },
+  maj7:   { t: "1 3 5 7",       sym: "maj7",   kind: "major-seventh",      rh: "1 3 5 7", top: "1 3 5" },
   m7:     { t: "1 b3 5 b7",     sym: "m7",     kind: "minor-seventh",      rh: "1 b3 5 b7" },
   m7b5:   { t: "1 b3 b5 b7",    sym: "m7♭5",   kind: "half-diminished",    rh: "1 b3 b5 b7" },
   dim7:   { t: "1 b3 b5 bb7",   sym: "dim7",   kind: "diminished-seventh", rh: "1 b3 b5 bb7" },
-  mMaj7:  { t: "1 b3 5 7",      sym: "m(maj7)", kind: "major-minor",       rh: "1 b3 5 7" },
+  mMaj7:  { t: "1 b3 5 7",      sym: "m(maj7)", kind: "major-minor",       rh: "1 b3 5 7", top: "1 b3 5" },
   "6":    { t: "1 3 5 6",       sym: "6",      kind: "major-sixth",        rh: "1 3 5 6" },
   m6:     { t: "1 b3 5 6",      sym: "m6",     kind: "minor-sixth",        rh: "1 b3 5 6" },
   "7sus4": { t: "1 4 5 b7",     sym: "7sus4",  kind: "suspended-fourth", deg: [["7", 0]], rh: "1 4 5 b7" },
@@ -759,8 +760,9 @@ function accVoiceRH(tones, prev, lo, hi, center, starts){
       for (let i = 1; i < n; i++) { let m = v[i - 1].midi + 1; while (m % 12 !== order[i].pc) m++; v.push({ ...order[i], midi: m }); }
       if (v[n - 1].midi > hi) continue;
       const mean = v.reduce((s, x) => s + x.midi, 0) / n;
-      let cost = 0.25 * Math.abs(mean - center);
-      for (let i = 1; i < n; i++) if (v[i].midi - v[i - 1].midi === 1) cost += 2.5;
+      let cost = 0.5 * Math.abs(mean - center);   // 一路照聲部進行走容易越飄越高,拉回中心
+      // 最低兩個音差半音最刺、最上面次之,中間的半音(m9 B 型的 9-♭3)是爵士常態
+      for (let i = 1; i < n; i++) if (v[i].midi - v[i - 1].midi === 1) cost += i === 1 ? 4 : i === n - 1 ? 2.5 : 0.8;
       if (prev) {
         for (const x of v) cost += Math.min(...prev.map(p => Math.abs(p.midi - x.midi)));
         for (const p of prev) cost += Math.min(...v.map(x => Math.abs(p.midi - x.midi)));
@@ -876,7 +878,8 @@ const GTR_ADV = {
   "maj|0":["x32010:.32.1. x35553:.12341 8aa988:134211","x46664:.12341 9bba99:134211","xx0232:...132 x57775:.12341 accbaa:134211","xx1343:..1243 x68886:.12341","022100:.231.. xx2454:..1243 x79997:.12341","xx3211:..3211 133211:134211 xx3565:..1243","244322:134211 xx4322:..3211 xx4676:..1243","320003:21...3 355433:134211 xx5433:..3211","466544:134211 xx6544:..3211 xx6898:..1243","x02220:..123. 577655:134211 xx7655:..3211","x13331:.12341 688766:134211 xx8766:..3211","x24442:.12341 799877:134211 xx9877:..3211"],
   "maj|4":["032010:.32.1. 035553:.12341 x75588:.31144","143121:143121 xx3664:..1342 x8666x:.3111.","200232:T..132 xx4775:..1342 x9777x:.3111.","3110xx:311... 365343:143121 xx5886:..1342","xxx100:...1.. 476454:143121 xx6997:..1342","x03211:..3211 5335xx:3124.. 587565:143121","xxx322:...211 6446xx:3124.. 698676:143121","x20003:.1...2 7557xx:3124.. 7a9787:143121","x3111x:.3111. xxx544:...211 8668xx:3124..","x42255:.31144 x47655:.14322 9779xx:3124..","xx0331:...341 x5333x:.3111. xxx766:...211","xx1402:..14.2 x6444x:.3111. xxx877:...211"],
   "maj|7":["332010:342.1. 335553:112341 xx555x:..111.","446664:112341 xxx121:...132 xx666x:..111.","x00232:...121 557775:112341 xx777x:..111.","x110xx:.12... xxx343:...132 668886:112341","x22100:.231.. xxx454:...132 779997:112341","x33211:.34211 x33565:.11243 xxx565:...132","x44322:.34211 x44676:.11243 xxx676:...132","xx0003:.....1 xx000x:...... x55787:.11243","xx111x:..111. x66544:.34211 x66898:.11243","002220:..123. x77655:.34211 x779a9:.11243","113331:112341 xx333x:..111. x88766:.34211","224442:112341 xx444x:..111. x99877:.34211"],
-  "min|0":["x35543:.13421 8aa888:134111 xxa888:..3111","x46654:.13421 x4212x:.4213. 9bb999:134111","xx0231:...231 x57765:.13421 accaaa:134111","xx1342:..1342 x68876:.13421","022000:.23... x79987:.13421","133111:134111 xx3564:..1342 x8aa98:.13421","244222:134111 xx4222:..3111 xx4675:..1342","355333:134111 xx5786:..1342 xaccba:.13421","466444:134111 xx6897:..1342","x02210:..231. x02555:..1444 577555:134111","x13321:.13421 688666:134111 xx8666:..3111","x24432:.13421 799777:134111 xx9bca:..1342"]
+  "min|0":["x35543:.13421 8aa888:134111 xxa888:..3111","x46654:.13421 x4212x:.4213. 9bb999:134111","xx0231:...231 x57765:.13421 accaaa:134111","xx1342:..1342 x68876:.13421","022000:.23... x79987:.13421","133111:134111 xx3564:..1342 x8aa98:.13421","244222:134111 xx4222:..3111 xx4675:..1342","355333:134111 xx5786:..1342 xaccba:.13421","466444:134111 xx6897:..1342","x02210:..231. x02555:..1444 577555:134111","x13321:.13421 688666:134111 xx8666:..3111","x24432:.13421 799777:134111 xx9bca:..1342"],
+  "sus2|0":["x30033:.1..23 x35533:.13411","x46644:.13411","xx0230:...23. x57755:.13411","x68866:.13411","024400:.134.. 079977:.13411","xx3011:..3.11 x8aa88:.13411","xx4674:..1341 x9bb99:.13411","300233:2..134 xaccaa:.13411","xx6896:..1341","x02200:..23..","x13311:.13411","x24422:.13411"]
 };
 const ACC_GTR_BASIC = ["maj", "min", "7", "m7", "maj7"];   // ACC_GTR_OPEN / ACC_GTR_BARRE 有的和弦種類
 function accGtrTable(rPc, id, bassIv){
@@ -889,24 +892,56 @@ function accGtrTable(rPc, id, bassIv){
 }
 // 這個和弦用哪一套指型:進階進行、或基本表沒有的和弦種類 / 低音不是和弦音的分數和弦 → GTR_ADV
 const accGtrUsesTable = (ch, adv) => adv || !ACC_GTR_BASIC.includes(ch.id) || (ch.bassIv && !ch.tones.some(t => t.pc === ch.bass.pc));
-/* 移調夾:整首能用開放和弦最多、夾的格數最少(例:F 調藍調 → Capo 3 用 D7/G7/A7… 指型)。noCapo:爵士類的進階進行不夾。
-   GTR_ADV 每個和弦有最多 3 個指型:推薦的優先,跟上一個和弦的把位越近越好(左手不用大跳,聲音也連得起來) */
-function accGtrPlan(chords, adv, noCapo){
+/* 移調夾與指型。基本進行:整首開放和弦最多、夾的格數最少(例:F 調藍調 → Capo 3 用 D7/G7/A7… 指型),上限 7 格。
+   進階進行(GTR_ADV 每個和弦最多 3 個指型):整首一起挑(動態規劃),推薦的優先、左手少跳把位、反覆時最後一個接回第一個也要順;
+   移調夾上限 5 格(夾太高、指型又在高把位會很擠)。jazzy(爵士、藍調、R&B、巴薩諾瓦、放克的進階進行):不夾、少用開放和弦
+   (爵士手用 x53555 → 3x3455 → x3243x 這種同一個把位的指型,不會跳回空弦)。family:主和弦移調後的根音要在這幾個裡(佛朗明哥只用 Am / Dm 家族) */
+function accGtrPlan(chords, adv, noCapo, family){
+  const jazzy = adv && noCapo;
+  const W = jazzy ? { rank: 1, move: 0.8, closed: 0, open: 3 } : { rank: 2.5, move: 0.6, closed: 3, open: 0 };
+  const hand = sh => { const on = sh.frets.filter(f => f > 0); return sh.open || !on.length ? 1 : Math.min(...on); };
+  const above = fr => fr.filter(f => f >= 0).length - 1;
+  const midMute = fr => { const lo = fr.findIndex(f => f >= 0), hi = 5 - [...fr].reverse().findIndex(f => f >= 0); for (let k = lo + 1; k < hi; k++) if (fr[k] < 0) return true; return false; };
+  const node = (sh, i, c) => i * W.rank + (sh.open ? W.open : W.closed) + (above(sh.frets) < 3 ? 1.5 : 0)
+    + (!jazzy && midMute(sh.frets) ? 0.5 : 0) + Math.max(0, c + Math.max(...sh.frets) - 10);
+  const trans = (a, b, same) => a === b ? 0 : W.move * Math.max(0, Math.abs(hand(a) - hand(b)) - 2) + 0.5 + (same ? 3 : 0)
+    - 0.4 * a.frets.filter((f, s) => f > 0 && f === b.frets[s] && a.fingers[s] === b.fingers[s]).length;   // 共同的手指不動
+  const n = chords.length;
   let best = null;
-  const pos = sh => { const on = sh.frets.filter(f => f > 0); return on.length ? on.reduce((a, b) => a + b, 0) / on.length : 0; };
-  for (let c = 0; c <= (noCapo ? 0 : 7); c++) {
-    let score = c * 0.6, prev = null, ok = true;
-    const shapes = chords.map(ch => {
+  for (let c = 0; c <= (noCapo ? 0 : adv ? 5 : 7); c++) {
+    const lists = chords.map(ch => {
       const r = (ch.rootPc - c + 12) % 12;
-      const list = accGtrUsesTable(ch, adv) ? accGtrTable(r, ch.id, ch.bassIv) : [accGtrShape(r, ch.kt, (ch.bass.pc - c + 12) % 12)];
-      if (!list.length) { ok = false; return null; }
-      let pick = list[0], pc = Infinity;
-      list.forEach((sh, i) => { const k = i * 2.5 + (prev ? 0.5 * Math.abs(pos(sh) - pos(prev)) : 0); if (k < pc) { pc = k; pick = sh; } });
-      prev = pick;
-      if (!pick.open) score += 3;
-      return pick;
+      return accGtrUsesTable(ch, adv) ? accGtrTable(r, ch.id, ch.bassIv) : [accGtrShape(r, ch.kt, (ch.bass.pc - c + 12) % 12)];
     });
-    if (ok && (!best || score < best.score)) best = { capo: c, shapes, score };
+    if (lists.some(l => !l.length)) continue;
+    let cc = c * 0.6 + (adv ? Math.max(0, c - 4) * 1.5 : 0);
+    if (family && !family.includes((chords[0].rootPc - c + 12) % 12)) cc += 4;
+    if (!adv) {   // 基本進行:每個和弦只有一個指型,照開放和弦數
+      const score = cc + lists.reduce((a, l) => a + (l[0].open ? 0 : 3), 0);
+      if (!best || score < best.score) best = { capo: c, shapes: lists.map(l => l[0]), score };
+      continue;
+    }
+    // 固定第一個和弦的指型,才能把「最後一個和弦(結尾前)接回第一個」算進去
+    for (let f0 = 0; f0 < lists[0].length; f0++) {
+      let D = lists[0].map((sh, j) => j === f0 ? node(sh, j, c) : Infinity);
+      const back = [];
+      for (let i = 1; i < n; i++) {
+        const B = [];
+        D = lists[i].map((sh, j) => {
+          let m = Infinity, arg = 0;
+          lists[i - 1].forEach((p, k) => { const v = D[k] + trans(p, sh, chords[i - 1].name === chords[i].name); if (v < m) { m = v; arg = k; } });
+          B.push(arg);
+          return m + node(sh, j, c) + (i === n - 2 ? trans(sh, lists[0][f0], false) : 0);
+        });
+        back.push(B);
+      }
+      let j = D.indexOf(Math.min(...D));
+      const score = D[j] + cc;
+      if (best && score >= best.score) continue;
+      const pick = [j];
+      for (let i = n - 1; i >= 1; i--) { j = back[i - 1][j]; pick.unshift(j); }
+      best = { capo: c, shapes: pick.map((k, i) => lists[i][k]), score };
+    }
   }
   if (!best) throw new Error("no guitar shape for " + chords.map(ch => ch.name).join(" "));
   return best;
@@ -917,14 +952,23 @@ function accShapeName(ch, capo){
   const r = (ch.rootPc - capo + 12) % 12, b = (ch.bass.pc - capo + 12) % 12;
   return ACC_SHARP_NAMES[r] + ch.kt + (ch.bassIv ? "/" + ACC_SHARP_NAMES[b] : "");
 }
-function accGtrStringFor(tok, frets){
-  const playable = i => frets[i] >= 0;
-  const bass = frets.findIndex(f => f >= 0);
-  if (tok === "T") return bass;
-  if (tok === "T'") { const alt = bass <= 1 ? 2 : (playable(1) ? 1 : bass); return playable(alt) ? alt : bass; }
-  let s = { "1": 3, "2": 4, "3": 5 }[tok];
-  while (s > bass && !playable(s)) s--;
-  return s;
+/* 右手 T / 1 2 3 / T' 各撥哪條弦,回傳 { s, f }(f 可能跟 frets[s] 不同:T' 換到下一條低音弦)。
+   1 2 3 = 低音以上、最高的三條有按的弦(第 1 弦不彈的 x3234x 也撥得到四個不同的音);
+   T'(交替低音)= 上方相鄰、是根音/五音/三音的弦;找不到(或 altLow:Boom、四拍和弦、巴薩諾瓦要 1–5 低音)就同一格換到下一條低音弦 = 下方五度
+   (C x32010 → 第 6 弦 3 格 G、Am x02210 → 第 6 弦空弦 E、Cmaj9 x3243x → 第 6 弦 3 格) */
+const ACC_ALT_RANK = { "1": 0, "5": 0, "3": 1, "b3": 1, "b5": 1, "#5": 1 };
+function accGtrStringFor(tok, frets, ch, capo, altLow){
+  const play = [0, 1, 2, 3, 4, 5].filter(s => frets[s] >= 0), bass = play[0];
+  if (tok === "T") return { s: bass, f: frets[bass] };
+  const up = play.filter(s => s > bass), fin = up.slice(-3);
+  while (fin.length < 3) fin.push(fin.length ? fin[fin.length - 1] : bass);
+  if (tok !== "T'") { const s = fin[+tok - 1]; return { s, f: frets[s] }; }
+  const role = s => { const pc = (ACC_GTR_OPEN_MIDI[s] + frets[s] + capo) % 12, t = ch.tones.find(x => x.pc === pc); return t ? t.deg : null; };
+  const hop = role(bass) === "1" && bass >= 1 && frets[bass - 1] < 0 ? { s: bass - 1, f: frets[bass] } : null;
+  if (altLow && hop) return hop;
+  const cand = up.filter(s => s <= Math.max(2, bass + 1) && !fin.includes(s))
+    .map(s => ({ s, r: ACC_ALT_RANK[role(s)] ?? 9 })).filter(x => x.r <= 1).sort((a, b) => a.r - b.r || (a.s === 2 ? -1 : b.s === 2 ? 1 : 0));
+  return cand.length ? { s: cand[0].s, f: frets[cand[0].s] } : hop || { s: bass, f: frets[bass] };
 }
 // 吉他音符的拼法:依和弦音的字母(找不到就照調號習慣的升降)
 function accLetterFor(midi, ch, key){
@@ -1033,20 +1077,25 @@ function accGenerate(opts){
     const rootless = guide.rootless;
     // 右手用哪幾個音:照和弦種類的 rh(延伸和弦已經省略根音、五音);爵士/R&B/巴薩諾瓦的三和弦、七和弦換成無根音 3-5-7-9
     const extOf = ch => !!ch.q.top && !/^1/.test(ch.q.top) || (rootless && ACC_ROOTLESS.includes(ch.id));
-    const voiceOf = (ch, prev) => {
+    // 屬七和弦往下五度解決到小和弦(E7 → Am、A7 → Dm):無根音聲位的 9 音改 ♭9(自然 9 跟小調衝突)
+    const toMinor = (ch, nx) => nx && ["min", "m7", "m9", "m6", "m69", "m11", "madd9", "mMaj7"].includes(nx.id) && (nx.rootPc - ch.rootPc + 12) % 12 === 5;
+    const voiceOf = (ch, prev, nx) => {
       let degs = ch.q.rh.split(" "), top = ch.q.top ? ch.q.top.split(" ") : null;
       if (rootless && ACC_ROOTLESS.includes(ch.id)) {
         const sev = ch.core[3] ? ch.core[3].deg : ch.id === "maj" ? "7" : "b7";
-        degs = [ch.core[1].deg, ch.core[2].deg, sev, "9"]; top = [ch.core[1].deg, sev];
+        // 爵士屬和弦:3-13-♭7-9(用 13 代替 5,才是爵士屬和弦的聲音);解決到小和弦用 ♭9
+        if (ch.id === "7") degs = ["3", toMinor(ch, nx) ? "b9" : "13", "b7", toMinor(ch, nx) ? "b13" : "9"];
+        else degs = [ch.core[1].deg, ch.core[2].deg, sev, "9"];
+        top = [ch.core[1].deg, sev];
       }
       const ext = extOf(ch);
-      return accVoiceRH(degs.map(ch.toneD), prev, 60, ext ? 79 : 78, ext ? 66 : 67, top);
+      return accVoiceRH(degs.map(ch.toneD), prev, 60, ext ? 77 : 78, ext ? 65 : 67, top);
     };
     // 先空跑一遍讓右手位置穩定(第二遍的第一個和弦是從最後一個和弦接過來的),之後每一遍都用同一組轉位
     let prev = null;
-    for (const ch of passChords) prev = voiceOf(ch, prev);
-    const rhs = passChords.map(ch => (prev = voiceOf(ch, prev)));
-    const rhEnd = voiceOf(endChord, rhs[rhs.length - 1]);
+    passChords.forEach((ch, i) => { prev = voiceOf(ch, prev, nextOf(i, false)); });
+    const rhs = passChords.map((ch, i) => (prev = voiceOf(ch, prev, nextOf(i, false))));
+    const rhEnd = voiceOf(endChord, rhs[rhs.length - 1], null);
     guide.abForms = passChords.concat([endChord]).some(extOf);
     const at = (t, midi) => ({ ...t, midi });
     // 半音接近音的拼法:字母選升降最少的(Ab 上方 = A 而不是 B𝄫,C♯ 下方 = C 而不是 B♯),一樣少時照方向(G 上方 = A♭)
@@ -1060,26 +1109,40 @@ function accGenerate(opts){
       const lhPat = last ? "hold" : lhKey;
       // 低音放 C2~B2:八度最高到 B3,一定在右手(C4 起)下面;沒有八度的型態(阿爾貝蒂、Boom-chick、巴薩諾瓦)放 E2~E♭3
       const b = at(ch.bass, accPlace(ch.bass.pc, ["alberti", "boom", "bossa"].includes(lhPat) ? 40 : 36));
-      const oct = at(b, b.midi + 12);
-      const fifthT = ch.bassIv === 0 ? ch.core[2] : (ch.bass.pc === ch.core[2].pc ? ch.core[0] : ch.core[2]);
-      const f = at(fifthT, accAbove(fifthT.pc, b.midi));
-      const fLow = (() => { const m = accPlace(fifthT.pc, b.midi - 12); return m >= 36 ? at(fifthT, m) : f; })();   // 五音放在根音下面(Boom-chick、巴薩諾瓦),低於 C2 就放上面
+      const rhMin = Math.min(...rh.map(p => p.midi));
+      const isCT = ch.core.some(t => t.pc === ch.bass.pc);
+      // 低音是三音時(C/E、G/B)左手不疊八度:導音/三音在低音區重複太多
+      const oct = at(b, b.midi + 12), octs = ch.bassIv && ch.bass.pc === ch.core[1].pc ? [b] : [b, oct];
+      // 跟低音搭的「五音」:分數和弦低音不是和弦音(F/G)→ 低音上方五度;低音是三音或五音(C/E、C/G)→ 根音;Am7/G → 五音
+      const fifthT = ch.bassIv === 0 ? ch.core[2]
+        : !isCT ? { pc: (ch.bass.pc + 7) % 12, li: (ch.bass.li + 4) % 7, deg: "5" }
+        : ch.bass.pc === ch.core[1].pc || ch.bass.pc === ch.core[2].pc ? ch.core[0] : ch.core[2];
+      let f = at(fifthT, accAbove(fifthT.pc, b.midi));
+      // m7♭5、dim 的五音是 ♭5:低音區反覆三全音很難聽,換成七音(沒有就八度)
+      if ((f.midi - b.midi) % 12 === 6) f = ch.core[3] ? at(ch.core[3], accAbove(ch.core[3].pc, b.midi)) : oct;
+      // 五音放在根音下面(Boom-chick、巴薩諾瓦),低於 C2 就放上面;分數和弦用低音上方的音(轉位效果才不會不見)
+      const fLow = ch.bassIv ? f : (() => { const m = accPlace(f.pc, b.midi - 12); return m >= 36 ? at(f, m) : f; })();
       const up = ch.core.filter(t => t.pc !== b.pc).map(t => at(t, accAbove(t.pc, b.midi))).sort((x, y) => x.midi - y.midi);
       const lab = accInvLabel(rh, extOf(ch));
       const eighths = ps => ps.map((p, i) => ({ at: i * 2, dur: 2, pitches: [p] }));
       let lhEv;
-      if (lhPat === "hold") lhEv = [{ at: 0, dur: 16, pitches: [b, oct] }];
-      else if (lhPat === "oct332") lhEv = [[0, 6], [6, 6], [12, 4]].map(([a, d]) => ({ at: a, dur: d, pitches: [b, oct] }));
+      if (lhPat === "hold") lhEv = [{ at: 0, dur: 16, pitches: octs }];
+      else if (lhPat === "oct332") lhEv = [[0, 6], [6, 6], [12, 4]].map(([a, d]) => ({ at: a, dur: d, pitches: octs }));
       else if (lhPat === "broken158") lhEv = eighths([b, f, oct, f, b, f, oct, f]);
       else if (lhPat === "broken1510") {
         const tt = ch.core.find(t => t.pc !== b.pc && t.pc !== f.pc) || ch.core[1];
-        const ten = at(tt, accAbove(tt.pc, b.midi + 12));
+        // 十度撞到右手就改彈八度(或五音),不要降八度(會變成低音區的三度、音型也亂)
+        let ten = at(tt, accAbove(tt.pc, b.midi + 12));
+        // 七和弦右手已經有三音時,十度改彈七音(導音不重複兩次)
+        if (ch.core[3] && rh.some(p => p.pc === ten.pc)) { const sv = ch.core[3]; ten = at(sv, accAbove(sv.pc, b.midi + 7)); }
+        if (ten.midi >= rhMin) ten = oct.midi < rhMin ? oct : f;
         lhEv = eighths([b, f, ten, f, b, f, ten, f]);
       } else if (lhPat === "alberti") {
-        const [x1, x2] = [up[0], up.find(t => t.midi > up[0].midi + 1) || up[1] || up[0]];
+        let [x1, x2] = [up[0], up.find(t => t.midi > up[0].midi + 1) || up[1] || up[0]];
+        if (x1.midi < 48) { x1 = f; x2 = oct; }   // C3 以下的三度太濁:低音區改 1-8-5-8
         lhEv = eighths([b, x2, x1, x2, b, x2, x1, x2]);
       } else if (lhPat === "boom") lhEv = [{ at: 0, dur: 4, pitches: [b] }, { at: 8, dur: 4, pitches: [fLow] }];
-      else if (lhPat === "rock8") lhEv = [0, 2, 4, 6, 8, 10, 12, 14].map(a => ({ at: a, dur: 2, pitches: [b, oct] }));
+      else if (lhPat === "rock8") lhEv = [0, 2, 4, 6, 8, 10, 12, 14].map(a => ({ at: a, dur: 2, pitches: octs }));
       else if (lhPat === "walking") {
         const n2 = up[0], n3 = up[1] || at(up[0], up[0].midi + 12);
         const tgt = at(next.bass, accPlace(next.bass.pc, 36));
@@ -1087,16 +1150,19 @@ function accGenerate(opts){
         if (ap.midi === n3.midi) ap = approach(tgt, !(n3.midi > tgt.midi));
         lhEv = [b, n2, n3, ap].map((p, i) => ({ at: i * 4, dur: 4, pitches: [p] }));
       } else if (lhPat === "shell") {
-        const st = ch.core[3] || ch.core[1];
-        lhEv = [{ at: 0, dur: 16, pitches: [b, at(st, accAbove(st.pc, b.midi))] }];
+        // 根音 + 七音;右手已經有七音(A/B 型都有)、三和弦、分數和弦就彈根音 + 五音(低音區的三度、二度很糊)
+        const sev = ch.core[3], rhHas7 = sev && rh.some(p => p.pc === sev.pc);
+        const st = sev && !rhHas7 && ch.bassIv === 0 ? at(sev, accAbove(sev.pc, b.midi)) : f;
+        lhEv = [{ at: 0, dur: 16, pitches: [b, st] }];
       } else if (lhPat === "boogie") {
         // 1-3-5-6-♭7-6-5-3:三音、五音、七音照這個和弦自己的(ii7 是小三度,不是硬套大三度)
         const r0 = ch.bassIv ? at(ch.tones[0], accPlace(ch.tones[0].pc, 36)) : b;
         const [t3, t5] = [ch.core[1], ch.core[2]], t6 = ch.toneD("6"), t7 = ch.core[3] && ch.core[3].deg !== "6" ? ch.core[3] : ch.toneD("b7");
-        lhEv = [ch.tones[0], t3, t5, t6, t7, t6, t5, t3].map((t, i) => ({ at: i * 2, dur: 2, pitches: [at(t, r0.midi + ACC_DEG_SEMI[t.deg] % 12)] }));
+        // dim7 的 6 跟 ♭♭7 同音:改成 1-♭3-♭5-♭♭7-8-♭♭7-♭5-♭3
+        const seq = ch.id === "dim7" ? [ch.tones[0], t3, t5, t7, { ...ch.tones[0], oct: 1 }, t7, t5, t3] : [ch.tones[0], t3, t5, t6, t7, t6, t5, t3];
+        lhEv = seq.map((t, i) => ({ at: i * 2, dur: 2, pitches: [at(t, r0.midi + ACC_DEG_SEMI[t.deg] % 12 + (t.oct ? 12 : 0))] }));
       } else lhEv = [{ at: 0, dur: 6, pitches: [b] }, { at: 6, dur: 2, pitches: [fLow] }, { at: 8, dur: 6, pitches: [b] }, { at: 14, dur: 2, pitches: [fLow] }];   // bossa
       // 兩隻手不能撞在一起:左手的音一定比右手最低音低,碰到就降八度(降不下去就不彈那個音)
-      const rhMin = Math.min(...rh.map(p => p.midi));
       lhEv = lhEv.map(e => {
         const ps = [];
         for (const p of e.pitches) {
@@ -1132,27 +1198,27 @@ function accGenerate(opts){
     guide.steps[guide.steps.length - 1].end = true;
   } else {
     const allChords = passChords.concat([endChord]);
-    plan = accGtrPlan(allChords, adv, adv && (!!style.swing || voicing === "rootless"));
+    plan = accGtrPlan(allChords, adv, adv && (!!style.swing || voicing === "rootless" || prog.capo === false), prog.gtrFamily);
     guide.capo = plan.capo;
     const gKey = style.guitar.includes(opts.gpat) ? opts.gpat : (pref.guitar || style.guitar[0]), pat = ACC_GTR_PATTERNS[gKey];
     guide.gpat = gKey;
     const build = (ch, shape, last) => {
-      const noteOn = (s, tok) => { const midi = ACC_GTR_OPEN_MIDI[s] + shape.frets[s] + plan.capo; return { midi, li: accLetterFor(midi, ch, key), str: s, fret: shape.frets[s], tok }; };
+      const noteOn = (s, tok, f = shape.frets[s]) => { const midi = ACC_GTR_OPEN_MIDI[s] + f + plan.capo; return { midi, li: accLetterFor(midi, ch, key), str: s, fret: f, tok }; };
       let evs;
       if (last) evs = [{ at: 0, dur: 16, pitches: shape.frets.map((f, s) => f >= 0 ? noteOn(s, "S") : null).filter(Boolean), label: L("掃弦", "strum") }];
       else evs = pat.seq.map(([a, d, tok]) => {
         // 「T+2」「T'+123」「123」:拆成每條弦一個音,同一條弦只彈一次
         const pitches = [], seen = new Set();
         for (const part of tok.split("+")) for (const sub of (part[0] === "T" ? [part] : [...part])) {
-          const s = accGtrStringFor(sub, shape.frets);
+          const { s, f } = accGtrStringFor(sub, shape.frets, ch, plan.capo, pat.altLow);
           if (seen.has(s)) continue;
-          seen.add(s); pitches.push(noteOn(s, sub === "T'" ? "T" : sub));
+          seen.add(s); pitches.push(noteOn(s, sub === "T'" ? "T" : sub, f));
         }
         pitches.sort((x, y) => x.str - y.str);
         return { at: a, dur: d, pitches, label: tok.replace("T'", "T") };
       });
       const notes = [];
-      evs.forEach(e => e.pitches.forEach((p, i) => notes.push({ at: e.at, dur: e.dur, midi: p.midi, str: p.str, tok: p.tok,
+      evs.forEach(e => e.pitches.forEach((p, i) => notes.push({ at: e.at, dur: e.dur, midi: p.midi, str: p.str, fret: p.fret, tok: p.tok,
         strum: last ? i * 0.016 : i * 0.004,
         vel: last ? 84 - i : p.tok === "T" ? (e.at === 0 ? 92 : 84) : e.pitches.length > 1 ? 72 : (e.at % 4 === 0 ? 80 : 74) })));
       // 上面五線譜(實際音高 + 8vb 譜號、T123),下面六線譜(格數照指型、相對移調夾)。
@@ -1177,7 +1243,9 @@ function accGenerate(opts){
       const rh = {};
       for (const x of b.notes) if (!(rh[x.str] || []).includes(x.tok)) (rh[x.str] = rh[x.str] || []).push(x.tok);
       return { name: b.chord.name, roman: b.chord.roman, rootPc: b.chord.rootPc, shapeName: accShapeName(b.chord, plan.capo),
-               frets: b.shape.frets, fingers: b.shape.fingers, rh, bassString: 6 - b.shape.frets.findIndex(f => f >= 0), end: i === passBars.length };
+               frets: b.shape.frets, fingers: b.shape.fingers, rh, bassString: 6 - b.shape.frets.findIndex(f => f >= 0), end: i === passBars.length,
+               // 交替低音換到的那條弦(和弦圖上沒按的弦):圖上畫空心點
+               alt: b.notes.filter(x => x.fret !== b.shape.frets[x.str]).map(x => ({ s: x.str, f: x.fret })).filter((x, k, a) => a.findIndex(y => y.s === x.s) === k) };
     });
     guide.shapeNames = [...new Set(guide.steps.map(x => x.shapeName))];
   }
@@ -1870,8 +1938,15 @@ function gtrSvg(st, capo){
     const a = xs(ones[0]), b = xs(ones[ones.length - 1]), y = yOf(frets[ones[0]]);
     g += `<rect class="brr" x="${a - 7}" y="${y - 7}" width="${b - a + 14}" height="14" rx="7"/>`;
   }
+  const alt = st.alt || [];
   frets.forEach((f, s) => {
-    if (f < 0) g += `<text class="mx" x="${xs(s)}" y="${y0 - 9}">×</text>`;
+    const a = alt.find(x => x.s === s);
+    // 交替低音換到這條沒按的弦(同一格、下方五度):空心點,不畫 ×
+    if (f < 0 && a) {
+      const ac = (ACC_GTR_OPEN_MIDI[s] + a.f + capo) % 12 === st.rootPc ? "var(--note-gold)" : "var(--note-teal)";
+      g += a.f === 0 ? `<circle class="od" data-s="${s}" cx="${xs(s)}" cy="${y0 - 13}" r="5" fill="none" stroke="${ac}" stroke-width="1.8" stroke-dasharray="2.5 2"/>`
+        : `<circle class="fd alt" data-s="${s}" cx="${xs(s)}" cy="${yOf(a.f)}" r="7" fill="none" stroke="${ac}" stroke-width="2" stroke-dasharray="3 2"/>`;
+    } else if (f < 0) g += `<text class="mx" x="${xs(s)}" y="${y0 - 9}">×</text>`;
     else if (f === 0) g += `<circle class="od" data-s="${s}" cx="${xs(s)}" cy="${y0 - 13}" r="5" fill="none" stroke="${col(s)}" stroke-width="1.8"/>`;
     else {
       g += `<circle class="fd" data-s="${s}" cx="${xs(s)}" cy="${yOf(f)}" r="7.5" fill="${col(s)}"/>`;
