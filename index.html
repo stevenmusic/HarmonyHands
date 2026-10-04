@@ -150,53 +150,69 @@ main{
   text-transform:uppercase;margin-bottom:10px;display:flex;align-items:center;gap:8px;flex-wrap:wrap;
 }
 .card-title b{font-family:"Noto Serif TC",serif;font-size:var(--fs-lg);letter-spacing:.06em;color:var(--gold);text-transform:none;font-weight:700}
-.card-title .sub{letter-spacing:.04em;text-transform:none;font-size:var(--fs-xs);color:var(--muted-bright)}
+.card-title .sub{letter-spacing:.04em;text-transform:none;font-size:var(--fs-xs);color:var(--muted-bright);flex:1 1 0;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 
 /* 樂器切換(兩段式) */
-.seg{display:flex;gap:0;border:1px solid var(--gold);border-radius:var(--radius-pill);overflow:hidden;margin-bottom:12px}
-.seg button{flex:1 1 0;min-width:0;height:40px;border:0;background:transparent;color:var(--gold);font-family:inherit;
+.seg{display:flex;gap:0;border:1px solid var(--gold);border-radius:var(--radius-pill);overflow:hidden}
+.seg button{flex:1 1 0;min-width:0;height:36px;border:0;background:transparent;color:var(--gold);font-family:inherit;
   font-size:var(--fs-md);font-weight:500;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px;padding:0 8px;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background .15s,color .15s}
 .seg button + button{border-left:1px solid var(--gold)}
 .seg button[aria-pressed="true"]{background:var(--gold-fill);color:var(--on-fill);font-weight:700}
-.fields{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px 12px}
-.field{display:flex;flex-direction:column;gap:5px;min-width:0}
+/* 設定:桌機 6 欄兩排(樂器・風格・進行・調・反覆 / 左手・右手・速度);窄螢幕兩欄 */
+.setup{padding:10px 14px 12px}
+.fields{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:8px 12px}
+.field{display:flex;flex-direction:column;gap:3px;min-width:0}
+.field[hidden]{display:none}
 .field.wide{grid-column:span 2}
-.field label{font-size:var(--fs-xs);color:var(--muted-bright);letter-spacing:.04em}
+.field.gtr{grid-column:span 4}
+.field label{font-size:var(--fs-2xs);color:var(--muted-bright);letter-spacing:.04em}
 .field select,.field input{
-  width:100%;min-width:0;height:38px;border:1px solid var(--line);border-radius:var(--radius-sm);
+  width:100%;min-width:0;height:36px;border:1px solid var(--line);border-radius:var(--radius-sm);
   background:var(--surface-inset);color:var(--ivory);font-family:inherit;font-size:var(--fs-md);padding:0 10px;
 }
 .field select:focus,.field input:focus{outline:none;border-color:var(--gold)}
 .tempo-row{display:flex;gap:6px;align-items:center}
 .tempo-row input{flex:1 1 auto;text-align:center}
-.tempo-row .btn{flex:none;width:38px;padding:0;height:38px}
-/* 窄螢幕兩欄:風格、調並排,進行與型態各占一整行,速度與反覆並排 */
+.tempo-row .btn{flex:none;width:36px;padding:0;height:36px}
+/* 手機:設定收成一行摘要(點了展開),練習卡片與樂譜不用往下滑就看得到 */
+.setup-summary{display:none;width:100%;align-items:center;gap:8px;border:0;background:transparent;color:var(--ivory);
+  font-family:inherit;font-size:var(--fs-sm);text-align:left;cursor:pointer;padding:2px 0;min-height:30px}
+.setup-summary span{flex:1 1 auto;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.setup-summary svg{flex:none;color:var(--gold)}
+.setup.open .setup-summary .chev{transform:rotate(180deg)}
 @media (max-width:900px){
   .fields{grid-template-columns:repeat(2,minmax(0,1fr))}
-  #fStyle{order:1} #fKey{order:2} #fProg{order:3} #fPattern{order:4} #fTempo{order:5} #fLoops{order:6}
+  .field.wide,.field.gtr{grid-column:span 1}
+  .field.gtr{grid-column:span 2}
+  #fTempo{order:8} #fLoops{order:9}
 }
-@media (max-width:600px){ .tempo-row .btn{width:34px;height:38px} }
+@media (max-width:600px){
+  .setup{padding:8px 12px}
+  .setup-summary{display:flex}
+  .setup:not(.open) .setup-body{display:none}
+  .setup.open .setup-body{margin-top:8px}
+  .tempo-row .btn{width:34px;height:36px}
+}
 
-/* 實際和弦預覽 */
-.preview{margin-top:12px;display:flex;flex-direction:column;gap:6px}
-.chips{display:flex;flex-wrap:wrap;gap:6px}
-.chip{display:inline-flex;align-items:baseline;gap:5px;padding:5px 10px;border:1px solid var(--line);border-radius:var(--radius-pill);
-  background:var(--surface-inset);font-size:var(--fs-md);font-weight:500;color:var(--ivory);transition:background .12s,border-color .12s,box-shadow .12s}
-.chip small{font-size:var(--fs-2xs);color:var(--muted)}
-.chip[role="button"]{cursor:pointer}
-.chip.on{background:var(--gold-fill);border-color:var(--gold-fill);color:var(--on-fill);box-shadow:0 0 16px -4px rgba(242,185,75,.75)}
-.chip.on small{color:var(--on-fill)}
-.capo-hint{font-size:var(--fs-sm);color:var(--teal);line-height:1.5}
-.capo-hint:empty{display:none}
+/* 練習卡的標題列:標題 + 播放/循環/預備拍 */
+.stage-head{display:flex;align-items:center;flex-wrap:wrap;gap:6px 10px;margin-bottom:6px}
+.stage-head > b{font-family:"Noto Serif TC",serif;font-size:var(--fs-lg);letter-spacing:.06em;color:var(--gold);font-weight:700}
+.stage-head .sub{font-size:var(--fs-xs);color:var(--muted-bright);min-width:0;flex:1 1 120px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.transport{display:flex;align-items:center;gap:6px;margin-left:auto}
+.transport .btn.primary{min-width:84px}
+.status{font-size:var(--fs-2xs);color:var(--muted);min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:180px}
+@media (max-width:600px){
+  .transport .btn-label{display:none}
+  .transport .btn.small{padding:0 9px}
+  .status{max-width:96px}
+}
+details.card > summary{list-style:none;cursor:pointer;margin-bottom:0}
+details.card > summary::-webkit-details-marker{display:none}
+details.card > summary .chev{margin-left:auto;color:var(--gold);transition:transform .2s}
+details.card[open] > summary{margin-bottom:10px}
+details.card[open] > summary .chev{transform:rotate(180deg)}
 
-/* 播放列 */
-.transport{display:flex;flex-wrap:wrap;align-items:center;gap:8px 10px;margin-top:14px;padding-top:12px;border-top:1px solid var(--line)}
-.transport .btn.primary{min-width:112px}
-.status{font-size:var(--fs-xs);color:var(--muted);margin-left:auto;min-width:0}
-@media (max-width:600px){ .status{flex-basis:100%;margin-left:0} }
-
-/* 樂譜:米色紙張 */
 .paper{background:var(--paper);border-radius:var(--radius-sm);padding:8px 4px;min-height:160px;overflow:hidden;position:relative;
   box-shadow:inset 0 0 0 1px rgba(0,0,0,.06)}
 #osmd{width:100%;color:#16130D}
@@ -214,15 +230,19 @@ main{
 .stage-row{display:flex;gap:10px;overflow-x:auto;overflow-y:hidden;scroll-snap-type:x proximity;padding:10px 10px 16px;margin:-6px -10px 0;   /* 內距留給外框光暈,不會被捲動容器切掉 */
   scrollbar-width:thin;scrollbar-color:var(--line) transparent;overscroll-behavior-x:contain}
 .scard{flex:0 0 clamp(220px, calc((100% - 30px) / 4), 340px);scroll-snap-align:center;min-width:0;cursor:pointer;
-  border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface-inset);padding:12px 12px 10px;
-  display:flex;flex-direction:column;align-items:center;gap:6px;transition:border-color .15s,box-shadow .2s}
+  border:1px solid var(--line);border-radius:var(--radius-md);background:var(--surface-inset);padding:10px 12px 8px;
+  display:flex;flex-direction:column;align-items:center;gap:4px;transition:border-color .15s,box-shadow .2s}
 .scard:focus-visible{outline:2px solid var(--gold);outline-offset:2px}
 .scard.on{border-color:var(--gold);box-shadow:0 0 0 1px var(--gold),0 0 16px 2px rgba(242,185,75,.35)}
-.scard-name{font-family:"Noto Serif TC",serif;font-weight:700;font-size:clamp(28px,3.2vw,40px);line-height:1.1;color:var(--muted-bright);text-align:center;white-space:nowrap}
+.scard-head{display:flex;align-items:baseline;justify-content:center;gap:8px;min-width:0;max-width:100%}
+.scard-name{font-family:"Noto Serif TC",serif;font-weight:700;font-size:clamp(24px,2.4vw,32px);line-height:1.1;color:var(--muted-bright);white-space:nowrap}
 .scard.on .scard-name{color:var(--gold-bright)}
-.scard-sub{font-size:var(--fs-xs);color:var(--muted);text-align:center;min-height:1.2em}
+.scard-sub{font-size:var(--fs-xs);color:var(--muted);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* 右手、左手:卡片夠寬時排在同一橫排,不夠寬才換行 */
+.scard-hands{display:flex;flex-wrap:wrap;gap:2px 16px;width:100%}
+.scard-hands .scard-row{flex:1 1 130px}
 .scard svg{display:block;width:100%;height:auto}
-.scard svg.gb{max-width:190px}
+.scard svg.gb{max-width:150px}
 .scard-row{display:flex;gap:6px;align-items:baseline;font-size:var(--fs-sm);width:100%;min-width:0}
 .scard-row span{flex:none;font-size:var(--fs-2xs);color:var(--muted);width:2.6em}
 .scard-row i{font-style:normal;color:var(--ivory);min-width:0;overflow-wrap:anywhere}
@@ -266,18 +286,16 @@ svg.gb .fd.hit,svg.gb .od.hit{filter:drop-shadow(0 0 4px rgba(255,236,190,.95))}
 .grid .c.now{background:rgba(242,185,75,.2);border-color:var(--gold)}
 .grid .c.now.on{background:var(--gold-fill);border-color:var(--gold-fill);color:var(--on-fill)}
 .grid .c.now.on small{color:var(--on-fill)}
-.stage-play{margin-left:auto;width:38px;padding:0}
 #scoreToggle{margin-left:auto}
 #scoreToggle svg{transition:transform .2s}
 #scoreToggle[aria-expanded="true"] svg{transform:rotate(180deg)}
 .paper[hidden]{display:none}
 @media (max-width:600px){
   .scard{flex-basis:100%}
-  .scard svg.gb{max-width:210px}
+  .scard svg.gb{max-width:170px}
   .grid{grid-template-columns:2.4em repeat(var(--n,8),minmax(0,1fr));gap:2px}
   .grid .c{height:34px;font-size:var(--fs-sm);border-radius:5px}
   .grid .c small{font-size:9px}
-  .stage-play{width:34px}
 }
 /* 手機橫向:卡片與節奏格壓扁,一個畫面放得下卡片 + 節奏格 */
 @media (max-height:420px) and (min-width:601px){
@@ -286,9 +304,8 @@ svg.gb .fd.hit,svg.gb .od.hit{filter:drop-shadow(0 0 4px rgba(255,236,190,.95))}
   .scard-row{font-size:var(--fs-xs)}
   .grid .c{height:26px;font-size:var(--fs-xs)}
   .grid .h{line-height:12px}
-  #stageCard .card-title{margin-bottom:4px}
+  .stage-head{margin-bottom:2px}
   .scard svg.gb{max-width:104px}
-  .scard-sub.foot{display:none}   /* 「T 彈第幾弦」圖下已經標了,橫向省掉 */
 }
 footer{max-width:1400px;width:100%;margin:0 auto;padding:6px 16px 28px;font-size:var(--fs-xs);line-height:1.8;color:var(--muted)}
 footer a{color:var(--muted-bright)}
@@ -332,64 +349,58 @@ body.light{background:
 </header>
 
 <main>
-  <!-- 1. 設定 -->
-  <section class="card" id="setupCard">
-    <div class="card-title"><b data-i18n="setupTitle">伴奏設定</b><span class="sub" data-i18n="setupSub">選風格與和弦進行,產生伴奏樂譜</span></div>
-    <div class="seg" id="instSeg" role="group">
-      <button data-inst="piano" aria-pressed="true">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M8 4v10M16 4v10M12 14v6M8 14h1.5M14.5 14H16"/></svg>
-        <span data-i18n="instPiano">鋼琴 左右手</span></button>
-      <button data-inst="guitar" aria-pressed="false">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 4l-6.5 6.5"/><path d="M18 2l4 4"/><path d="M10.5 9.5c-2-1-4.5-.5-5.5 1.5-.6 1.2-.2 2-1.4 2.8C2 14.8 2 17 3.6 18.4l2 2C7 22 9.2 22 10.2 20.4c.8-1.2 1.6-.8 2.8-1.4 2-1 2.5-3.5 1.5-5.5"/><circle cx="9.5" cy="14.5" r="1.5"/></svg>
-        <span data-i18n="instGuitar">吉他 T123</span></button>
-    </div>
-    <div class="fields">
-      <div class="field" id="fStyle"><label for="selStyle" data-i18n="lblStyle">風格</label><select id="selStyle"></select></div>
-      <div class="field wide" id="fProg"><label for="selProg" data-i18n="lblProg">和弦進行</label><select id="selProg"></select></div>
-      <div class="field" id="fKey"><label for="selKey" data-i18n="lblKey">調</label><select id="selKey"></select></div>
-      <div class="field wide" id="fPattern"><label for="selPattern" data-i18n="lblPattern">伴奏型態</label><select id="selPattern"></select></div>
-      <div class="field" id="fTempo"><label for="inpTempo" data-i18n="lblTempo">速度(BPM)</label>
-        <div class="tempo-row">
-          <button class="btn" id="tempoDown" data-i18n-attr="aria-label:tempoDown" aria-label="慢一點"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></button>
-          <input id="inpTempo" type="number" inputmode="numeric" min="40" max="220" step="1">
-          <button class="btn" id="tempoUp" data-i18n-attr="aria-label:tempoUp" aria-label="快一點"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>
-        </div></div>
-      <div class="field" id="fLoops"><label for="selLoops" data-i18n="lblLoops">反覆次數</label><select id="selLoops"></select></div>
-    </div>
-    <div class="preview">
-      <div class="chips" id="chips"></div>
-      <div class="capo-hint" id="capoHint"></div>
-    </div>
-    <div class="transport">
-      <button class="btn primary" id="playBtn">
-        <svg id="playIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4.5v15l12-7.5z" fill="currentColor"/></svg>
-        <span id="playLabel" data-i18n="play">播放</span></button>
-      <button class="btn" id="loopBtn" aria-pressed="true">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 013-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 01-3 3H3"/></svg>
-        <span data-i18n="loop">循環</span></button>
-      <button class="btn" id="countBtn" aria-pressed="true">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l4 18H5z"/><path d="M12 15l5-9"/><path d="M8 15h8"/></svg>
-        <span data-i18n="countIn">預備拍</span></button>
-      <span class="status" id="status" aria-live="polite"></span>
+  <!-- 1. 設定:桌機兩排;手機收成一行摘要,點了才展開 -->
+  <section class="card setup" id="setupCard">
+    <button class="setup-summary" id="setupToggle" aria-expanded="false" aria-controls="setupBody">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 12h16M4 18h10"/></svg>
+      <span id="setupSummary"></span>
+      <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></button>
+    <div class="setup-body" id="setupBody">
+      <div class="fields">
+        <div class="field" id="fInst"><label data-i18n="lblInst">樂器</label>
+          <div class="seg" id="instSeg" role="group">
+            <button data-inst="piano" aria-pressed="true"><span data-i18n="instPiano">鋼琴</span></button>
+            <button data-inst="guitar" aria-pressed="false"><span data-i18n="instGuitar">吉他</span></button>
+          </div></div>
+        <div class="field" id="fStyle"><label for="selStyle" data-i18n="lblStyle">風格</label><select id="selStyle"></select></div>
+        <div class="field wide" id="fProg"><label for="selProg" data-i18n="lblProg">和弦進行</label><select id="selProg"></select></div>
+        <div class="field" id="fKey"><label for="selKey" data-i18n="lblKey">調</label><select id="selKey"></select></div>
+        <div class="field" id="fLoops"><label for="selLoops" data-i18n="lblLoops">反覆次數</label><select id="selLoops"></select></div>
+        <div class="field wide" id="fLH"><label for="selLH" data-i18n="lblLH">左手型態</label><select id="selLH"></select></div>
+        <div class="field wide" id="fRH"><label for="selRH" data-i18n="lblRH">右手型態</label><select id="selRH"></select></div>
+        <div class="field wide gtr" id="fGtr" hidden><label for="selGtr" data-i18n="lblGtr">右手指法(T123)</label><select id="selGtr"></select></div>
+        <div class="field wide" id="fTempo"><label for="inpTempo" data-i18n="lblTempo">速度(BPM)</label>
+          <div class="tempo-row">
+            <button class="btn" id="tempoDown" data-i18n-attr="aria-label:tempoDown" aria-label="慢一點"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14"/></svg></button>
+            <input id="inpTempo" type="number" inputmode="numeric" min="40" max="220" step="1">
+            <button class="btn" id="tempoUp" data-i18n-attr="aria-label:tempoUp" aria-label="快一點"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 5v14M5 12h14"/></svg></button>
+          </div></div>
+      </div>
     </div>
   </section>
 
   <!-- 2. 練習:和弦卡片 + 這一小節的節奏格 -->
   <section class="card" id="stageCard">
-    <div class="card-title"><b data-i18n="stageTitle">練習</b><span class="sub" id="stageSub"></span>
-      <button class="btn stage-play" id="stagePlay" data-i18n-attr="aria-label:play,title:play" aria-label="播放">
-        <svg id="stagePlayIcon" width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4.5v15l12-7.5z" fill="currentColor"/></svg></button></div>
+    <div class="stage-head">
+      <b data-i18n="stageTitle">練習</b><span class="sub" id="stageSub"></span>
+      <div class="transport">
+        <span class="status" id="status" aria-live="polite"></span>
+        <button class="btn primary small" id="playBtn">
+          <svg id="playIcon" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M7 4.5v15l12-7.5z" fill="currentColor"/></svg>
+          <span id="playLabel" data-i18n="play">播放</span></button>
+        <button class="btn small" id="loopBtn" aria-pressed="true" data-i18n-attr="aria-label:loop,title:loop" aria-label="循環" title="循環">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 2l4 4-4 4"/><path d="M3 11V9a3 3 0 013-3h15"/><path d="M7 22l-4-4 4-4"/><path d="M21 13v2a3 3 0 01-3 3H3"/></svg>
+          <span class="btn-label" data-i18n="loop">循環</span></button>
+        <button class="btn small" id="countBtn" aria-pressed="true" data-i18n-attr="aria-label:countIn,title:countIn" aria-label="預備拍" title="預備拍">
+          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 3h6l4 18H5z"/><path d="M12 15l5-9"/><path d="M8 15h8"/></svg>
+          <span class="btn-label" data-i18n="countIn">預備拍</span></button>
+      </div>
+    </div>
     <div class="stage-row" id="stageRow"></div>
     <div class="grid" id="grid"></div>
   </section>
 
-  <!-- 3. 指法說明 -->
-  <section class="card" id="guideCard">
-    <div class="card-title"><b data-i18n="guideTitle">指法說明</b><span class="sub" id="guideSub"></span></div>
-    <div id="guide"></div>
-  </section>
-
-  <!-- 4. 樂譜(選用,打開才載入 OSMD) -->
+  <!-- 3. 樂譜(預設打開;OSMD 打開時才載入) -->
   <section class="card" id="scoreCard">
     <div class="card-title"><b data-i18n="scoreTitle">樂譜</b><span class="sub" id="scoreSub"></span>
       <button class="btn small" id="scoreToggle" aria-expanded="false" aria-controls="paper">
@@ -397,6 +408,13 @@ body.light{background:
         <span id="scoreToggleLabel" data-i18n="scoreShow">顯示樂譜</span></button></div>
     <div class="paper" id="paper" hidden><div id="osmd"></div><div class="paper-msg" id="paperMsg"></div></div>
   </section>
+
+  <!-- 4. 指法說明(收合) -->
+  <details class="card" id="guideCard">
+    <summary class="card-title"><b data-i18n="guideTitle">指法說明</b><span class="sub" id="guideSub"></span>
+      <svg class="chev" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg></summary>
+    <div id="guide"></div>
+  </details>
 </main>
 
 <footer id="credits"></footer>
@@ -406,7 +424,7 @@ body.light{background:
 const $ = id => document.getElementById(id);
 
 /* ══ 語言 ══════════════════════════════════════════════════════ */
-const LANG_KEY = "harmonyhands-lang", THEME_KEY = "harmonyhands-theme", PREF_KEY = "harmonyhands-settings";
+const LANG_KEY = "harmonyhands-lang", THEME_KEY = "harmonyhands-theme", PREF_KEY = "harmonyhands-settings-v2";   // v2:風格/型態改版,舊設定不沿用
 let LANG = (() => { try { const v = localStorage.getItem(LANG_KEY); if (v === "en" || v === "zh") return v; } catch (e) {} return /^zh/i.test(navigator.language || "zh") ? "zh" : "en"; })();
 const L = (zh, en) => LANG === "en" ? en : zh;
 const I18N = {
@@ -415,8 +433,8 @@ const I18N = {
     langToggleText: "EN", langToggleLabel: "切換為英文", langToggleTitle: "切換語言",
     themeToggleLabel: "淺色模式", themeToggleTitle: "切換淺色/深色主題",
     setupTitle: "伴奏設定", setupSub: "選風格與和弦進行,產生伴奏樂譜",
-    instPiano: "鋼琴 左右手", instGuitar: "吉他 T123",
-    lblStyle: "風格", lblProg: "和弦進行", lblKey: "調", lblPattern: "伴奏型態", lblTempo: "速度(BPM)", lblLoops: "反覆次數",
+    instPiano: "鋼琴", instGuitar: "吉他", lblInst: "樂器", lblLH: "左手型態", lblRH: "右手型態", lblGtr: "右手指法(T123)",
+    lblStyle: "風格", lblProg: "和弦進行", lblKey: "調", lblTempo: "速度(BPM)", lblLoops: "反覆次數",
     tempoDown: "慢一點", tempoUp: "快一點",
     play: "播放", stop: "停止", loop: "循環", countIn: "預備拍",
     scoreTitle: "樂譜", guideTitle: "指法說明", stageTitle: "練習", scoreShow: "顯示樂譜", scoreHide: "收起樂譜",
@@ -428,8 +446,8 @@ const I18N = {
     langToggleText: "中", langToggleLabel: "Switch to Chinese", langToggleTitle: "Switch language",
     themeToggleLabel: "Light mode", themeToggleTitle: "Switch light/dark theme",
     setupTitle: "Setup", setupSub: "Pick a style and progression to generate an accompaniment",
-    instPiano: "Piano · both hands", instGuitar: "Guitar · T123",
-    lblStyle: "Style", lblProg: "Progression", lblKey: "Key", lblPattern: "Pattern", lblTempo: "Tempo (BPM)", lblLoops: "Repeats",
+    instPiano: "Piano", instGuitar: "Guitar", lblInst: "Instrument", lblLH: "Left hand", lblRH: "Right hand", lblGtr: "Right-hand picking (T123)",
+    lblStyle: "Style", lblProg: "Progression", lblKey: "Key", lblTempo: "Tempo (BPM)", lblLoops: "Repeats",
     tempoDown: "Slower", tempoUp: "Faster",
     play: "Play", stop: "Stop", loop: "Loop", countIn: "Count-in",
     scoreTitle: "Score", guideTitle: "Fingering Guide", stageTitle: "Practice", scoreShow: "Show score", scoreHide: "Hide score",
@@ -444,63 +462,99 @@ function T(k, vars){ let s = (I18N[LANG] && I18N[LANG][k]) || I18N.zh[k] || k; i
    選風格 → 常用和弦進行(羅馬數字字串,/3 /5 /b7 = 低音是和弦的第幾音)→ 產生 MusicXML 與播放用的音符表。
    鋼琴:右手挑「離上一個和弦最近」的轉位(共同音不動、其他音走最近),左手依伴奏型態;
    吉他:指型優先開放和弦,不夠時建議移調夾;右手 T123(台灣民謠吉他慣例,= 古典吉他 p/i/m/a) */
+/* 風格:每個風格只列這個風格常用的和弦進行與伴奏型態。小調是調式不是風格:小調進行放在所屬的風格裡(minor: true,調的選單換成小調)。
+   進行:羅馬數字(大寫大三、小寫小三;7 / maj7 七和弦;/3 /5 /b7 = 轉位低音是和弦的第幾音),名稱附 C 調(小調附 A 小調)的例子。
+   piano.lh / piano.rh / guitar:這個風格可選的型態,第一個是預設;進行的 pref 可以換掉預設(例:拉丁裡的佛朗明哥不用巴薩諾瓦低音)。
+   swing:播放時八分音符前長後短(譜上照慣例寫平均八分 + 「Swing」);voicing "rootless":右手用爵士無根音聲位 */
 const ACC_STYLES = [
-  { id: "pop", zh: "流行", en: "Pop", tempo: 84, piano: "pop", guitar: "alt8", progs: [
-    { ch: "I V vi IV", zh: "1-5-6-4(最常見)", en: "1-5-6-4 (the classic)" },
-    { ch: "vi IV I V", zh: "6-4-1-5", en: "6-4-1-5" },
-    { ch: "I vi IV V", zh: "1-6-4-5(50 年代)", en: "1-6-4-5 ('50s)" } ] },
-  { id: "canon", zh: "卡農", en: "Canon", tempo: 76, piano: "broken", guitar: "arp8", progs: [
-    { ch: "I V vi iii IV I IV V", zh: "1-5-6-3-4-1-4-5(帕海貝爾)", en: "1-5-6-3-4-1-4-5 (Pachelbel)" },
-    { ch: "I V/3 vi I/5 IV I/3 IV V", zh: "卡農・低音級進下行(轉位和弦)", en: "Canon with stepwise bass (slash chords)" } ] },
-  { id: "royal", zh: "王道進行(日系/華語)", en: "Royal Road (J-pop)", tempo: 88, piano: "pop", guitar: "alt8", progs: [
-    { ch: "IVmaj7 V7 iii7 vi7", zh: "4-5-3-6(七和弦)", en: "4-5-3-6 (sevenths)" },
-    { ch: "IV V iii vi ii V I I", zh: "4-5-3-6-2-5-1", en: "4-5-3-6-2-5-1" } ] },
-  { id: "ballad", zh: "抒情", en: "Ballad", tempo: 68, piano: "broken", guitar: "arp16", progs: [
-    { ch: "I V/3 vi vi/b7 IV I/3 ii V", zh: "低音下行 1-7-6-5-4-3-2-5", en: "Descending bass 1-7-6-5-4-3-2-5" },
-    { ch: "I iii IV V", zh: "1-3-4-5", en: "1-3-4-5" } ] },
-  { id: "folk", zh: "民謠", en: "Folk", tempo: 96, piano: "alberti", guitar: "alt8", progs: [
-    { ch: "I IV I V", zh: "1-4-1-5", en: "1-4-1-5" },
-    { ch: "I IV V I", zh: "1-4-5-1", en: "1-4-5-1" },
-    { ch: "I vi ii V", zh: "1-6-2-5", en: "1-6-2-5" } ] },
-  { id: "rock", zh: "搖滾", en: "Rock", tempo: 112, piano: "pop", guitar: "alt8", progs: [
-    { ch: "I bVII IV I", zh: "1-♭7-4-1", en: "1-♭7-4-1" },
-    { ch: "I IV V IV", zh: "1-4-5-4", en: "1-4-5-4" } ] },
-  { id: "minor", zh: "小調", en: "Minor", tempo: 80, minor: true, piano: "broken", guitar: "arp8", progs: [
-    { ch: "i bVI bIII bVII", zh: "i-♭VI-♭III-♭VII(Am-F-C-G)", en: "i-♭VI-♭III-♭VII (Am-F-C-G)" },
-    { ch: "i bVII bVI V7", zh: "安達魯西亞終止(Am-G-F-E7)", en: "Andalusian cadence (Am-G-F-E7)" },
-    { ch: "i iv V7 i", zh: "i-iv-V7-i", en: "i-iv-V7-i" } ] },
-  { id: "jazz", zh: "爵士", en: "Jazz", tempo: 116, piano: "jazz", guitar: "arp8", progs: [
-    { ch: "ii7 V7 Imaj7 Imaj7", zh: "2-5-1", en: "ii-V-I" },
-    { ch: "Imaj7 vi7 ii7 V7", zh: "1-6-2-5 回轉", en: "I-vi-ii-V turnaround" },
-    { ch: "iii7 vi7 ii7 V7 Imaj7 Imaj7", zh: "3-6-2-5-1", en: "iii-vi-ii-V-I" } ] },
-  { id: "rnb", zh: "R&B / Neo Soul", en: "R&B / Neo Soul", tempo: 72, piano: "jazz", guitar: "arp16", progs: [
-    { ch: "IVmaj7 iii7 ii7 Imaj7", zh: "4-3-2-1 七和弦下行", en: "4-3-2-1 sevenths" },
-    { ch: "Imaj7 iii7 IVmaj7 iv7", zh: "含借用和弦 iv7", en: "with borrowed iv7" } ] },
-  { id: "blues", zh: "藍調", en: "Blues", tempo: 100, piano: "boogie", guitar: "alt8", progs: [
-    { ch: "I7 I7 I7 I7 IV7 IV7 I7 I7 V7 IV7 I7 V7", zh: "12 小節藍調", en: "12-bar blues" },
-    { ch: "I7 IV7 I7 I7 IV7 IV7 I7 I7 V7 IV7 I7 V7", zh: "12 小節藍調(第 2 小節先到 IV)", en: "12-bar blues (quick change)" } ] },
+  { id: "pop", zh: "流行", en: "Pop", tempo: 84,
+    progs: [
+      { ch: "I V vi IV", zh: "1-5-6-4(C-G-Am-F,最常見)", en: "I–V–vi–IV (C–G–Am–F, the classic)" },
+      { ch: "vi IV I V", zh: "6-4-1-5(Am-F-C-G)", en: "vi–IV–I–V (Am–F–C–G)" },
+      { ch: "I vi IV V", zh: "1-6-4-5(C-Am-F-G,50 年代)", en: "I–vi–IV–V (C–Am–F–G, '50s)" },
+      { ch: "IVmaj7 V7 iii7 vi7", zh: "4-5-3-6 王道進行(日系,Fmaj7-G7-Em7-Am7)", en: "IV–V–iii–vi Royal Road (J-pop, Fmaj7–G7–Em7–Am7)" },
+      { ch: "IV V iii vi ii V I I", zh: "4-5-3-6-2-5-1(華語流行,F-G-Em-Am-Dm-G-C)", en: "IV–V–iii–vi–ii–V–I (Mandopop)" } ],
+    piano: { lh: ["oct332", "broken158", "hold"], rh: ["pop332", "half", "arp"] }, guitar: ["alt8", "arp8", "arp16", "quarter"] },
+  { id: "ballad", zh: "抒情", en: "Ballad", tempo: 68,
+    progs: [
+      { ch: "I V vi iii IV I IV V", zh: "卡農 1-5-6-3-4-1-4-5(C-G-Am-Em-F-C-F-G)", en: "Canon I–V–vi–iii–IV–I–IV–V" },
+      { ch: "I V/3 vi iii/5 IV I/3 IV V", zh: "卡農・轉位低音下行(C-G/B-Am-Em/G-F-C/E-F-G)", en: "Canon, descending bass (C–G/B–Am–Em/G–F–C/E–F–G)" },
+      { ch: "I V/3 vi vi/b7 IV I/3 ii V", zh: "低音下行 1-7-6-5-4-3-2-5(C-G/B-Am-Am/G-F-C/E-Dm-G)", en: "Descending bass (C–G/B–Am–Am/G–F–C/E–Dm–G)" },
+      { ch: "i iv V7 i", minor: true, zh: "小調 i-iv-V7-i(Am-Dm-E7-Am)", en: "Minor i–iv–V7–i (Am–Dm–E7–Am)" } ],
+    piano: { lh: ["broken158", "broken1510", "hold"], rh: ["half", "arp", "block"] }, guitar: ["arp16", "arp8", "quarter"] },
+  { id: "folk", zh: "民謠", en: "Folk", tempo: 96,
+    progs: [
+      { ch: "I IV I V", zh: "1-4-1-5(C-F-C-G)", en: "I–IV–I–V (C–F–C–G)" },
+      { ch: "I IV V I", zh: "1-4-5-1(C-F-G-C)", en: "I–IV–V–I (C–F–G–C)" },
+      { ch: "I vi ii V", zh: "1-6-2-5(C-Am-Dm-G)", en: "I–vi–ii–V (C–Am–Dm–G)" } ],
+    piano: { lh: ["boom", "alberti", "broken158"], rh: ["offbeat", "half", "quarter"] }, guitar: ["alt8", "travis", "boom", "quarter"] },
+  { id: "rock", zh: "搖滾", en: "Rock", tempo: 112,
+    progs: [
+      { ch: "I IV V IV", zh: "1-4-5-4(C-F-G-F)", en: "I–IV–V–IV (C–F–G–F)" },
+      { ch: "I bVII IV I", zh: "1-♭7-4-1(C-B♭-F-C)", en: "I–♭VII–IV–I (C–B♭–F–C)" },
+      { ch: "i bVII bVI bVII", minor: true, zh: "小調 i-♭VII-♭VI-♭VII(Am-G-F-G)", en: "Minor i–♭VII–♭VI–♭VII (Am–G–F–G)" } ],
+    piano: { lh: ["rock8", "oct332", "hold"], rh: ["quarter", "eighths", "pop332"] }, guitar: ["boom", "alt8", "travis"] },
+  { id: "blues", zh: "藍調", en: "Blues", tempo: 100, swing: true,
+    progs: [
+      { ch: "I7 I7 I7 I7 IV7 IV7 I7 I7 V7 IV7 I7 V7", zh: "12 小節藍調", en: "12-bar blues" },
+      { ch: "I7 IV7 I7 I7 IV7 IV7 I7 I7 V7 IV7 I7 V7", zh: "12 小節藍調(第 2 小節先到 IV)", en: "12-bar blues (quick change)" } ],
+    piano: { lh: ["boogie", "walking", "shell"], rh: ["offbeat", "charleston", "block"] }, guitar: ["travis", "boom", "comp4"] },
+  { id: "jazz", zh: "爵士", en: "Jazz", tempo: 116, swing: true, voicing: "rootless",
+    progs: [
+      { ch: "ii7 V7 Imaj7 Imaj7", zh: "2-5-1(Dm7-G7-Cmaj7)", en: "ii–V–I (Dm7–G7–Cmaj7)" },
+      { ch: "Imaj7 vi7 ii7 V7", zh: "1-6-2-5 回轉(Cmaj7-Am7-Dm7-G7)", en: "I–vi–ii–V turnaround" },
+      { ch: "iii7 vi7 ii7 V7 Imaj7 Imaj7", zh: "3-6-2-5-1(Em7-Am7-Dm7-G7-Cmaj7)", en: "iii–vi–ii–V–I" } ],
+    piano: { lh: ["walking", "shell"], rh: ["charleston", "block", "offbeat"] }, guitar: ["comp4", "boom"] },
+  { id: "rnb", zh: "R&B / 靈魂", en: "R&B / Soul", tempo: 72, voicing: "rootless",
+    progs: [
+      { ch: "IVmaj7 iii7 ii7 Imaj7", zh: "4-3-2-1 七和弦下行(Fmaj7-Em7-Dm7-Cmaj7)", en: "IV–iii–ii–I sevenths" },
+      { ch: "Imaj7 iii7 IVmaj7 iv7", zh: "1-3-4-4m 借用小四級(Cmaj7-Em7-Fmaj7-Fm7)", en: "I–iii–IV–iv (borrowed iv7)" } ],
+    piano: { lh: ["hold", "shell", "oct332"], rh: ["anticip", "block", "arp"] }, guitar: ["arp16", "arp8"] },
+  { id: "latin", zh: "拉丁", en: "Latin", tempo: 120,
+    progs: [
+      { ch: "ii7 V7 Imaj7 Imaj7", zh: "巴薩諾瓦 2-5-1(Dm7-G7-Cmaj7)", en: "Bossa nova ii–V–I (Dm7–G7–Cmaj7)", voicing: "rootless" },
+      { ch: "i bVII bVI V7", minor: true, zh: "佛朗明哥・安達魯西亞終止(Am-G-F-E7)", en: "Flamenco – Andalusian cadence (Am–G–F–E7)",
+        tempo: 96, pref: { lh: "broken158", rh: "half", guitar: "arp8" } } ],
+    piano: { lh: ["bossa", "broken158", "hold"], rh: ["anticip", "half", "arp"] }, guitar: ["bossa", "arp8"] },
 ];
-const ACC_PIANO_PATTERNS = {
-  block:   { zh: "柱式和弦", en: "Block chords", pedal: true,
-             tipZh: "左手八度根音、右手柱式和弦,一小節彈一次。先練換和弦時右手只移動最少的音(共同音按住不動)。",
-             tipEn: "LH root octave, RH block chord, once per bar. Practise moving the fewest RH notes between chords (hold common tones)." },
-  broken:  { zh: "左手 1-5-8-5 分解", en: "LH 1-5-8-5 broken", pedal: true,
-             tipZh: "左手 1-5-8-5 分解(根音-五度-八度-五度)八分音符,右手二分音符柱式和弦;轉位和弦(如 C/E)左手從低音開始。每小節換和弦時換踏板。",
-             tipEn: "LH 1-5-8-5 (root-5th-octave-5th) in eighths, RH half-note chords; for slash chords (C/E) the LH starts on the bass note. Change the pedal with each chord." },
-  pop:     { zh: "流行切分 3+3+2", en: "Pop 3+3+2", pedal: true,
-             tipZh: "雙手一起在第 1、2½、4 拍彈(3+3+2 切分);左手八度、右手柱式和弦。",
-             tipEn: "Both hands on beats 1, 2&, 4 (3+3+2); LH octave, RH chord." },
-  alberti: { zh: "阿爾貝蒂低音", en: "Alberti bass", pedal: true,
-             tipZh: "左手 低-高-中-高 分解(古典/民謠常用),右手二分音符柱式和弦。",
-             tipEn: "LH low-high-middle-high broken chord, RH half-note chords." },
-  jazz:    { zh: "爵士殼音 + Charleston", en: "Jazz shells + Charleston", pedal: false,
-             tipZh: "左手根音 + 七音(殼音),右手無根音聲位(A 型 3-5-7-9 / B 型 7-9-3-5),Charleston 節奏(第 1 拍、第 2 拍後半)。",
-             tipEn: "LH root + 7th shell, RH rootless voicing (A: 3-5-7-9 / B: 7-9-3-5), Charleston rhythm (1, 2&)." },
-  boogie:  { zh: "藍調 Boogie", en: "Boogie-woogie", pedal: false,
-             tipZh: "左手 1-3-5-6-♭7-6-5-3 八分音符,右手在第 2、4 拍彈和弦。可以自己加搖擺(前長後短)。",
-             tipEn: "LH 1-3-5-6-♭7-6-5-3 in eighths, RH chord on 2 and 4. Swing it if you like." },
+/* 鋼琴左手型態。pedal:播放與譜上要不要踩踏板(每小節換一次) */
+const ACC_LH = {
+  hold:       { zh: "八度長音", en: "Octave, held", pedal: true,
+                tipZh: "左手根音八度,一小節彈一次按住。", tipEn: "Root octave held for the bar." },
+  oct332:     { zh: "八度切分 3+3+2", en: "Octaves 3+3+2", pedal: true,
+                tipZh: "左手根音八度,第 1、2½、4 拍彈(3+3+2 切分)。", tipEn: "Root octaves on 1, 2&, 4 (3+3+2)." },
+  broken158:  { zh: "1-5-8-5 分解", en: "1-5-8-5 broken", pedal: true,
+                tipZh: "左手根音-五度-八度-五度八分音符;轉位和弦(如 C/E)從低音開始。", tipEn: "Root–5th–octave–5th in eighths; slash chords start on the bass note." },
+  broken1510: { zh: "1-5-10 開放分解", en: "1-5-10 open broken", pedal: true,
+                tipZh: "左手根音-五度-十度(高八度的三音)-五度,音域張得開,抒情曲常用。", tipEn: "Root–5th–10th–5th: a wide, lush ballad pattern." },
+  alberti:    { zh: "阿爾貝蒂", en: "Alberti bass", pedal: true,
+                tipZh: "左手 低-高-中-高 分解(古典、民謠)。", tipEn: "Low–high–middle–high broken chord." },
+  boom:       { zh: "根音-五音交替(Boom-chick)", en: "Root–fifth (boom-chick)", pedal: false,
+                tipZh: "左手第 1 拍根音、第 3 拍五音,配右手第 2、4 拍的和弦。", tipEn: "LH root on 1, fifth on 3, against RH chords on 2 and 4." },
+  rock8:      { zh: "八度八分音符", en: "Driving octaves", pedal: false,
+                tipZh: "左手根音八度連續八分音符,推動節奏。", tipEn: "Root octaves in straight eighths." },
+  walking:    { zh: "行走低音(四分)", en: "Walking bass", pedal: false,
+                tipZh: "左手每拍一個音:根音-三音-五音-半音接近下一個和弦的根音。", tipEn: "One note per beat: root–3rd–5th–chromatic approach to the next root." },
+  shell:      { zh: "殼音(根音 + 七音)", en: "Shell (root + 7th)", pedal: false,
+                tipZh: "左手只彈根音和七音(三和弦彈三音),右手補其他音。", tipEn: "LH plays only root + 7th (3rd for triads); the RH fills in." },
+  boogie:     { zh: "Boogie(1-3-5-6-♭7)", en: "Boogie-woogie", pedal: false,
+                tipZh: "左手 1-3-5-6-♭7-6-5-3 八分音符。", tipEn: "LH 1-3-5-6-♭7-6-5-3 in eighths." },
+  bossa:      { zh: "巴薩諾瓦低音", en: "Bossa nova bass", pedal: false,
+                tipZh: "左手根音(附點四分)- 五音(八分),一小節兩次。", tipEn: "Root (dotted quarter) – fifth (eighth), twice per bar." },
 };
-// 吉他右手:每小節 16 格(十六分音符),[起點, 長度, 手指];T' 是交替低音(第二個低音弦)
+/* 鋼琴右手型態:[起點, 長度](16 分音符為單位);arp = 右手分解和弦 */
+const ACC_RH = {
+  block:      { zh: "全音符柱式", en: "Whole-note chord", hits: [[0, 16]], tipZh: "右手一小節按一次和弦。", tipEn: "One chord per bar." },
+  half:       { zh: "二分音符柱式", en: "Half-note chords", hits: [[0, 8], [8, 8]], tipZh: "右手第 1、3 拍彈和弦。", tipEn: "Chords on 1 and 3." },
+  quarter:    { zh: "四分音符和弦", en: "Quarter-note chords", hits: [[0, 4], [4, 4], [8, 4], [12, 4]], tipZh: "右手每拍一次和弦。", tipEn: "A chord on every beat." },
+  eighths:    { zh: "八分音符和弦", en: "Eighth-note chords", hits: [[0, 2], [2, 2], [4, 2], [6, 2], [8, 2], [10, 2], [12, 2], [14, 2]], tipZh: "右手八分音符連續和弦。", tipEn: "Chords in straight eighths." },
+  pop332:     { zh: "切分 3+3+2", en: "Syncopated 3+3+2", hits: [[0, 6], [6, 6], [12, 4]], tipZh: "右手第 1、2½、4 拍(3+3+2)。", tipEn: "Chords on 1, 2&, 4 (3+3+2)." },
+  offbeat:    { zh: "第 2、4 拍和弦", en: "Chords on 2 & 4", hits: [[4, 4], [12, 4]], tipZh: "右手只在第 2、4 拍彈。", tipEn: "Chords on beats 2 and 4 only." },
+  charleston: { zh: "Charleston(1、2&)", en: "Charleston (1, 2&)", hits: [[0, 6], [6, 2]], tipZh: "右手第 1 拍與第 2 拍後半。", tipEn: "Chords on 1 and the & of 2." },
+  anticip:    { zh: "切分短奏(1、2&、4)", en: "Syncopated stabs (1, 2&, 4)", hits: [[0, 4], [6, 2], [12, 4]], tipZh: "右手第 1 拍、第 2 拍後半、第 4 拍短短地彈。", tipEn: "Short chords on 1, the & of 2, and 4." },
+  arp:        { zh: "右手分解(八分)", en: "RH arpeggio (eighths)", arp: true, tipZh: "右手把和弦音一個一個上下彈。", tipEn: "The RH plays the chord tones one by one, up and down." },
+};
+// 吉他右手:每小節 16 格(十六分音符),[起點, 長度, 手指];T' = 交替低音(第二條低音弦);「T+2」= 拇指和中指同時(掐弦);「123」= 三指同時
 const ACC_GTR_PATTERNS = {
   quarter: { zh: "T 1 2 3(四分,入門)", en: "T 1 2 3 (quarters, beginner)",
              seq: [[0,4,"T"],[4,4,"1"],[8,4,"2"],[12,4,"3"]] },
@@ -511,6 +565,14 @@ const ACC_GTR_PATTERNS = {
   arp16:   { zh: "T121 3121 ×2(十六分,抒情)", en: "T121 3121 ×2 (sixteenths, ballad)",
              seq: [[0,1,"T"],[1,1,"1"],[2,1,"2"],[3,1,"1"],[4,1,"3"],[5,1,"1"],[6,1,"2"],[7,1,"1"],
                    [8,1,"T'"],[9,1,"1"],[10,1,"2"],[11,1,"1"],[12,1,"3"],[13,1,"1"],[14,1,"2"],[15,1,"1"]] },
+  travis:  { zh: "Travis 指法(拇指每拍交替)", en: "Travis picking (thumb on every beat)",
+             seq: [[0,2,"T+2"],[2,2,"1"],[4,2,"T'"],[6,2,"2"],[8,2,"T"],[10,2,"1"],[12,2,"T'"],[14,2,"2"]] },
+  boom:    { zh: "低音-和弦(T、123 交替)", en: "Bass–chord (T, 123)",
+             seq: [[0,4,"T"],[4,4,"123"],[8,4,"T'"],[12,4,"123"]] },
+  comp4:   { zh: "四拍和弦(低音 + 和弦)", en: "Four-to-the-bar chords",
+             seq: [[0,4,"T+123"],[4,4,"123"],[8,4,"T'+123"],[12,4,"123"]] },
+  bossa:   { zh: "巴薩諾瓦(拇指 1、3 拍,和弦切分)", en: "Bossa nova (thumb 1 & 3, syncopated chords)",
+             seq: [[0,4,"T+123"],[6,2,"123"],[8,4,"T'"],[12,4,"123"]] },
 };
 const ACC_MAJ = [0, 2, 4, 5, 7, 9, 11];
 const ACC_ROMAN = ["I", "II", "III", "IV", "V", "VI", "VII"];
@@ -550,8 +612,8 @@ function accSpell(p){   // {midi, li} → MusicXML step/alter/octave
   const alter = accAlterOf(p.li, ((p.midi % 12) + 12) % 12);
   return { step: ACC_LETTERS[p.li], alter, octave: Math.round((p.midi - alter - ACC_MAJ[p.li]) / 12) - 1 };
 }
-function accKeyFor(style, tonic){
-  const mode = style.minor ? "minor" : "major";
+function accKeyFor(minor, tonic){
+  const mode = minor ? "minor" : "major";
   const [tonicName, fifths] = ACC_KEYS[mode].find(k => k[0] === tonic) || ACC_KEYS[mode][0];
   return { ...accNameParts(tonicName), fifths, name: tonicName, mode };
 }
@@ -753,7 +815,7 @@ function accNotesXml(evs, staff, voice, opts = {}){
         + (opts.stem ? `<stem>${opts.stem}</stem>` : "") + st
         + (b && !i ? `<beam number="1">${b}</beam>` + (x.dur === 1 ? `<beam number="2">${b}</beam>` : "") : "")
         + (nota ? `<notations>${nota}</notations>` : "")
-        + (!opts.tab && !i && x.lyric ? `<lyric number="1"><syllabic>single</syllabic><text>${esc(x.lyric)}</text></lyric>` : "") + `</note>`;
+        + `</note>`;   // 不寫 lyric:轉位、A/B 型、T123 標在譜上很干擾閱讀(使用者要求),這些在練習卡片與節奏格上看
     }).join("");
   }).join("");
 }
@@ -769,69 +831,102 @@ function accHarmonyXml(ch){
    bars 是播放用的音符表(跟樂譜同一份資料產生,不用再從 MusicXML 解析) */
 function accGenerate(opts){
   const style = ACC_STYLES.find(s => s.id === opts.style) || ACC_STYLES[0], prog = style.progs[opts.prog] || style.progs[0];
-  const key = accKeyFor(style, opts.tonic);
+  const pref = prog.pref || {};
+  const minor = !!prog.minor, voicing = prog.voicing || style.voicing || "";
+  const key = accKeyFor(minor, opts.tonic);
   const romans = prog.ch.split(" ");
   const loops = Math.max(1, +opts.loops || 1);
-  const endRoman = style.id === "blues" ? "I7" : style.minor ? "i" : (romans.every(r => /7/.test(r)) ? "Imaj7" : "I");   // 最後補一小節主和弦
+  const endRoman = style.id === "blues" ? "I7" : minor ? "i" : (romans.every(r => /7/.test(r)) ? "Imaj7" : "I");   // 最後補一小節主和弦
   const passChords = romans.map(r => accRealize(accParseRoman(r), key));
   const endChord = accRealize(accParseRoman(endRoman), key);
+  const n = passChords.length;
+  const nextOf = (i, finalPass) => i + 1 < n ? passChords[i + 1] : (finalPass ? endChord : passChords[0]);
   const isGtr = opts.inst === "guitar";
-  const keyName = accPcName(key.li, key.pc) + (style.minor ? "m" : "");
+  const keyName = accPcName(key.li, key.pc) + (minor ? "m" : "");
   const passBars = [];          // 一遍進行的每小節(反覆時每遍都一樣,說明卡片才對得起來)
-  let endBar = null, plan = null;
-  const guide = { inst: opts.inst, keyName, pattern: opts.pattern, capo: 0, steps: [], shapeNames: [] };
+  let endBar = null, finalLast = null, plan = null;
+  const guide = { inst: opts.inst, keyName, minor, swing: !!style.swing, capo: 0, steps: [], shapeNames: [] };
 
   if (!isGtr) {
-    const pat = ACC_PIANO_PATTERNS[opts.pattern] ? opts.pattern : style.piano, jazz = pat === "jazz";
-    guide.pattern = pat;
+    const lhKey = style.piano.lh.includes(opts.lh) ? opts.lh : (pref.lh || style.piano.lh[0]);
+    const rhKey = style.piano.rh.includes(opts.rh) ? opts.rh : (pref.rh || style.piano.rh[0]);
+    Object.assign(guide, { lh: lhKey, rh: rhKey, pedal: ACC_LH[lhKey].pedal, rootless: voicing === "rootless" });
+    const rootless = guide.rootless;
     const voiceOf = (ch, prev) => {
       let rhTones = ch.tones;
-      if (jazz) {
+      if (rootless) {
         const sev = ch.tones[3] || ch.tone(ch.kind === "major" ? 11 : 10);
         rhTones = [ch.tones[1], ch.tones[2], sev, ch.tone(2)];
       }
-      return accVoiceRH(rhTones, prev, pat === "boogie" ? 62 : 60, jazz ? 79 : 78, jazz ? 66 : 67, jazz ? [3, 4, 10, 11] : null);
+      return accVoiceRH(rhTones, prev, 60, rootless ? 79 : 78, rootless ? 66 : 67, rootless ? [3, 4, 10, 11] : null);
     };
     // 先空跑一遍讓右手位置穩定(第二遍的第一個和弦是從最後一個和弦接過來的),之後每一遍都用同一組轉位
     let prev = null;
     for (const ch of passChords) prev = voiceOf(ch, prev);
     const rhs = passChords.map(ch => (prev = voiceOf(ch, prev)));
     const rhEnd = voiceOf(endChord, rhs[rhs.length - 1]);
-    const build = (ch, rh, last) => {
-      const b = { ...ch.bass, midi: accPlace(ch.bass.pc, pat === "alberti" ? 43 : 40) };
-      const oct = { ...b, midi: b.midi + 12 };
-      const other = ch.tones.filter(t => t.pc !== b.pc);
+    const at = (t, midi) => ({ ...t, midi });
+    // 半音接近音的拼法:字母選升降最少的(Ab 上方 = A 而不是 B𝄫,C♯ 下方 = C 而不是 B♯),一樣少時照方向(G 上方 = A♭)
+    const approach = (target, up) => {
+      const pc = (((target.midi + (up ? 1 : -1)) % 12) + 12) % 12;
+      const cands = [(target.li + (up ? 1 : 6)) % 7, target.li];
+      const li = cands.reduce((a, c) => Math.abs(accAlterOf(c, pc)) < Math.abs(accAlterOf(a, pc)) ? c : a);
+      return { li, pc, midi: target.midi + (up ? 1 : -1) };
+    };
+    const build = (ch, rh, last, next) => {
+      const lhPat = last ? "hold" : lhKey;
+      // 低音放 C2~B2:八度最高到 B3,一定在右手(C4 起)下面;沒有八度的型態(阿爾貝蒂、Boom-chick、巴薩諾瓦)放 E2~E♭3
+      const b = at(ch.bass, accPlace(ch.bass.pc, ["alberti", "boom", "bossa"].includes(lhPat) ? 40 : 36));
+      const oct = at(b, b.midi + 12);
       const fifthT = ch.bassIv === 0 ? ch.tones[2] : (ch.bass.pc === ch.tones[2].pc ? ch.tones[0] : ch.tones[2]);
-      const f = { ...fifthT, midi: accAbove(fifthT.pc, b.midi) };
-      const lab = accInvLabel(rh, jazz);
-      let rhEv, lhEv;
-      if (last || pat === "block") {
-        rhEv = [{ at: 0, dur: 16, pitches: rh, lyric: lab }];
-        lhEv = [{ at: 0, dur: 16, pitches: [b, oct] }];
-      } else if (pat === "broken") {
-        rhEv = [{ at: 0, dur: 8, pitches: rh, lyric: lab }, { at: 8, dur: 8, pitches: rh }];
-        lhEv = [b, f, oct, f, b, f, oct, f].map((p, i) => ({ at: i * 2, dur: 2, pitches: [p] }));
-      } else if (pat === "pop") {
-        rhEv = [{ at: 0, dur: 6, pitches: rh, lyric: lab }, { at: 6, dur: 6, pitches: rh }, { at: 12, dur: 4, pitches: rh }];
-        lhEv = [{ at: 0, dur: 6, pitches: [b, oct] }, { at: 6, dur: 6, pitches: [b, oct] }, { at: 12, dur: 4, pitches: [b, oct] }];
-      } else if (pat === "alberti") {
-        const x1 = { ...other[0], midi: accAbove(other[0].pc, b.midi) };
-        const x2c = other.find(t => t.pc !== x1.pc) || other[0];
-        const x2 = { ...x2c, midi: accAbove(x2c.pc, x1.midi) };
-        const [lo2, hi2] = [x1, x2].sort((a, c) => a.midi - c.midi);
-        rhEv = [{ at: 0, dur: 8, pitches: rh, lyric: lab }, { at: 8, dur: 8, pitches: rh }];
-        lhEv = [b, hi2, lo2, hi2, b, hi2, lo2, hi2].map((p, i) => ({ at: i * 2, dur: 2, pitches: [p] }));
-      } else if (pat === "jazz") {
-        const shellT = ch.tones[3] || ch.tones[1];
-        const shell = { ...shellT, midi: accAbove(shellT.pc, b.midi) };
-        rhEv = [{ at: 0, dur: 6, pitches: rh, lyric: lab }, { at: 6, dur: 2, pitches: rh }];
-        lhEv = [{ at: 0, dur: 16, pitches: [b, shell] }];
-      } else { // boogie
-        const r0 = ch.bassIv ? { ...ch.tones[0], midi: accPlace(ch.tones[0].pc, 40) } : b;
-        const steps = [0, 4, 7, 9, 10, 9, 7, 4];
-        lhEv = steps.map((iv, i) => ({ at: i * 2, dur: 2, pitches: [{ ...ch.tone(iv), midi: r0.midi + iv }] }));
-        rhEv = [{ at: 4, dur: 4, pitches: rh, lyric: lab }, { at: 12, dur: 4, pitches: rh }];
-      }
+      const f = at(fifthT, accAbove(fifthT.pc, b.midi));
+      const fLow = (() => { const m = accPlace(fifthT.pc, b.midi - 12); return m >= 36 ? at(fifthT, m) : f; })();   // 五音放在根音下面(Boom-chick、巴薩諾瓦),低於 C2 就放上面
+      const up = ch.tones.filter(t => t.pc !== b.pc).map(t => at(t, accAbove(t.pc, b.midi))).sort((x, y) => x.midi - y.midi);
+      const lab = accInvLabel(rh, rootless);
+      const eighths = ps => ps.map((p, i) => ({ at: i * 2, dur: 2, pitches: [p] }));
+      let lhEv;
+      if (lhPat === "hold") lhEv = [{ at: 0, dur: 16, pitches: [b, oct] }];
+      else if (lhPat === "oct332") lhEv = [[0, 6], [6, 6], [12, 4]].map(([a, d]) => ({ at: a, dur: d, pitches: [b, oct] }));
+      else if (lhPat === "broken158") lhEv = eighths([b, f, oct, f, b, f, oct, f]);
+      else if (lhPat === "broken1510") {
+        const tt = ch.tones.find(t => t.pc !== b.pc && t.pc !== f.pc) || ch.tones[1];
+        const ten = at(tt, accAbove(tt.pc, b.midi + 12));
+        lhEv = eighths([b, f, ten, f, b, f, ten, f]);
+      } else if (lhPat === "alberti") {
+        const [x1, x2] = [up[0], up.find(t => t.midi > up[0].midi + 1) || up[1] || up[0]];
+        lhEv = eighths([b, x2, x1, x2, b, x2, x1, x2]);
+      } else if (lhPat === "boom") lhEv = [{ at: 0, dur: 4, pitches: [b] }, { at: 8, dur: 4, pitches: [fLow] }];
+      else if (lhPat === "rock8") lhEv = [0, 2, 4, 6, 8, 10, 12, 14].map(a => ({ at: a, dur: 2, pitches: [b, oct] }));
+      else if (lhPat === "walking") {
+        const n2 = up[0], n3 = up[1] || at(up[0], up[0].midi + 12);
+        const tgt = at(next.bass, accPlace(next.bass.pc, 36));
+        let ap = approach(tgt, n3.midi > tgt.midi);
+        if (ap.midi === n3.midi) ap = approach(tgt, !(n3.midi > tgt.midi));
+        lhEv = [b, n2, n3, ap].map((p, i) => ({ at: i * 4, dur: 4, pitches: [p] }));
+      } else if (lhPat === "shell") {
+        const st = ch.tones[3] || ch.tones[1];
+        lhEv = [{ at: 0, dur: 16, pitches: [b, at(st, accAbove(st.pc, b.midi))] }];
+      } else if (lhPat === "boogie") {
+        const r0 = ch.bassIv ? at(ch.tones[0], accPlace(ch.tones[0].pc, 36)) : b;
+        lhEv = [0, 4, 7, 9, 10, 9, 7, 4].map((iv, i) => ({ at: i * 2, dur: 2, pitches: [at(ch.tone(iv), r0.midi + iv)] }));
+      } else lhEv = [{ at: 0, dur: 6, pitches: [b] }, { at: 6, dur: 2, pitches: [fLow] }, { at: 8, dur: 6, pitches: [b] }, { at: 14, dur: 2, pitches: [fLow] }];   // bossa
+      // 兩隻手不能撞在一起:左手的音一定比右手最低音低,碰到就降八度(降不下去就不彈那個音)
+      const rhMin = Math.min(...rh.map(p => p.midi));
+      lhEv = lhEv.map(e => {
+        const ps = [];
+        for (const p of e.pitches) {
+          let m = p.midi;
+          while (m >= rhMin && m - 12 >= 28) m -= 12;
+          if (m < rhMin && !ps.some(q => q.midi === m)) ps.push(at(p, m));
+        }
+        return { ...e, pitches: ps };
+      }).filter(e => e.pitches.length);
+      let rhEv;
+      const rhPat = last ? "block" : rhKey;
+      if (rhPat === "arp") {
+        const order = rh.length >= 4 ? [0, 1, 2, 3, 2, 1, 0, 1] : [0, 1, 2, 1, 0, 1, 2, 1];
+        rhEv = order.map((k, i) => ({ at: i * 2, dur: 2, pitches: [rh[k]], lyric: i ? "" : lab }));
+      } else rhEv = ACC_RH[rhPat].hits.map(([a, d], i) => ({ at: a, dur: d, pitches: rh, lyric: i ? "" : lab }));
       // 播放用:力度(拍子輕重 + 聲部層次)
       const notes = [];
       const nm = p => accPcName(p.li, ((p.midi % 12) + 12) % 12);
@@ -840,52 +935,62 @@ function accGenerate(opts){
       lhEv.forEach(e => e.pitches.forEach((p, i) => notes.push({ at: e.at, dur: e.dur, midi: p.midi, hand: "L", nm: nm(p),
         vel: (e.at === 0 ? 66 : e.at % 4 === 0 ? 56 : 50) - (i ? 6 : 0) })));
       const lhNames = [];
-      for (const e of lhEv) for (const p of e.pitches) { const n = accPcName(p.li, ((p.midi % 12) + 12) % 12); if (!lhNames.includes(n)) lhNames.push(n); }
+      for (const e of lhEv) for (const p of e.pitches) { const x = nm(p); if (!lhNames.includes(x)) lhNames.push(x); }
       return { chord: ch, notes, xml: [accNotesXml(rhEv, 1, 1), accNotesXml(lhEv, 2, 5)],
-               info: { name: ch.name, roman: ch.roman, rootPc: ch.rootPc, rh: rh.map(p => accPcName(p.li, p.midi % 12)), rhLabel: lab, lh: lhNames,
-                       rhMidi: [...new Set(notes.filter(n => n.hand === "R").map(n => n.midi))], lhMidi: [...new Set(notes.filter(n => n.hand === "L").map(n => n.midi))] } };
+               info: { name: ch.name, roman: ch.roman, rootPc: ch.rootPc, rh: rh.map(nm), rhLabel: lab, lh: lhNames,
+                       rhMidi: [...new Set(notes.filter(x => x.hand === "R").map(x => x.midi))], lhMidi: [...new Set(notes.filter(x => x.hand === "L").map(x => x.midi))] } };
     };
-    passChords.forEach((ch, i) => passBars.push(build(ch, rhs[i], false)));
-    endBar = build(endChord, rhEnd, true);
+    passChords.forEach((ch, i) => passBars.push(build(ch, rhs[i], false, nextOf(i, false))));
+    finalLast = build(passChords[n - 1], rhs[n - 1], false, endChord);   // 最後一遍的最後一小節接到結尾的主和弦(行走低音的接近音不同)
+    endBar = build(endChord, rhEnd, true, endChord);
     guide.steps = passBars.map(b => b.info).concat([endBar.info]);
     guide.steps[guide.steps.length - 1].end = true;
   } else {
     const allChords = passChords.concat([endChord]);
     plan = accGtrPlan(allChords);
     guide.capo = plan.capo;
-    const patKey = ACC_GTR_PATTERNS[opts.pattern] ? opts.pattern : style.guitar, pat = ACC_GTR_PATTERNS[patKey];
-    guide.pattern = patKey;
+    const gKey = style.guitar.includes(opts.gpat) ? opts.gpat : (pref.guitar || style.guitar[0]), pat = ACC_GTR_PATTERNS[gKey];
+    guide.gpat = gKey;
     const build = (ch, shape, last) => {
-      const noteOn = s => { const midi = ACC_GTR_OPEN_MIDI[s] + shape.frets[s] + plan.capo; return { midi, li: accLetterFor(midi, ch, key), str: s, fret: shape.frets[s] }; };
+      const noteOn = (s, tok) => { const midi = ACC_GTR_OPEN_MIDI[s] + shape.frets[s] + plan.capo; return { midi, li: accLetterFor(midi, ch, key), str: s, fret: shape.frets[s], tok }; };
       let evs;
-      if (last) {
-        const all = shape.frets.map((f, s) => f >= 0 ? noteOn(s) : null).filter(Boolean);
-        evs = [{ at: 0, dur: 16, pitches: all, lyric: L("掃弦", "strum") }];
-      } else {
-        evs = pat.seq.map(([at, dur, tok]) => ({ at, dur, pitches: [noteOn(accGtrStringFor(tok, shape.frets))], lyric: tok === "T'" ? "T" : tok, tok }));
-      }
+      if (last) evs = [{ at: 0, dur: 16, pitches: shape.frets.map((f, s) => f >= 0 ? noteOn(s, "S") : null).filter(Boolean), label: L("掃弦", "strum") }];
+      else evs = pat.seq.map(([a, d, tok]) => {
+        // 「T+2」「T'+123」「123」:拆成每條弦一個音,同一條弦只彈一次
+        const pitches = [], seen = new Set();
+        for (const part of tok.split("+")) for (const sub of (part[0] === "T" ? [part] : [...part])) {
+          const s = accGtrStringFor(sub, shape.frets);
+          if (seen.has(s)) continue;
+          seen.add(s); pitches.push(noteOn(s, sub === "T'" ? "T" : sub));
+        }
+        pitches.sort((x, y) => x.str - y.str);
+        return { at: a, dur: d, pitches, label: tok.replace("T'", "T") };
+      });
       const notes = [];
-      evs.forEach(e => e.pitches.forEach((p, i) => notes.push({ at: e.at, dur: e.dur, midi: p.midi, str: p.str, tok: last ? "S" : e.tok === "T'" ? "T" : e.tok,
-        strum: last ? i * 0.016 : 0,
-        vel: last ? 84 - i : (e.tok === "T" || e.tok === "T'" ? (e.at === 0 ? 92 : 84) : (e.at % 4 === 0 ? 80 : 74)) })));
+      evs.forEach(e => e.pitches.forEach((p, i) => notes.push({ at: e.at, dur: e.dur, midi: p.midi, str: p.str, tok: p.tok,
+        strum: last ? i * 0.016 : i * 0.004,
+        vel: last ? 84 - i : p.tok === "T" ? (e.at === 0 ? 92 : 84) : e.pitches.length > 1 ? 72 : (e.at % 4 === 0 ? 80 : 74) })));
       // 上面五線譜(實際音高 + 8vb 譜號、T123),下面六線譜(格數照指型、相對移調夾)。
       // 五線譜照古典/指彈吉他的標準寫法分兩個聲部:手指(1 2 3)符桿朝上,拇指低音(T)符桿朝下、時值寫到下一個低音(弦一直在響);
       // 結尾的掃弦寫成一個和弦加琶音記號
       let staffXml;
-      if (last) staffXml = [accNotesXml(evs.map(e => ({ ...e, arp: true })), 1, 1)];
+      if (last) staffXml = [accNotesXml(evs.map(e => ({ ...e, lyric: e.label, arp: true })), 1, 1)];
       else {
-        const isT = e => e.tok === "T" || e.tok === "T'";
-        const bassE = evs.filter(isT).map((e, i, a) => ({ ...e, dur: (a[i + 1] ? a[i + 1].at : 16) - e.at }));
-        staffXml = [accNotesXml(evs.filter(e => !isT(e)), 1, 1, { stem: "up", restAt: "E4" }), accNotesXml(bassE, 1, 2, { stem: "down", restAt: "F3" })];
+        const fingers = evs.map(e => ({ at: e.at, dur: e.dur, pitches: e.pitches.filter(p => p.tok !== "T"), lyric: e.label })).filter(e => e.pitches.length);
+        const thumbs = evs.filter(e => e.pitches.some(p => p.tok === "T"));
+        const bassE = thumbs.map((e, i) => ({ at: e.at, dur: (thumbs[i + 1] ? thumbs[i + 1].at : 16) - e.at, pitches: e.pitches.filter(p => p.tok === "T"),
+                                              lyric: e.pitches.every(p => p.tok === "T") ? "T" : "" }));
+        staffXml = [accNotesXml(fingers, 1, 1, { stem: "up", restAt: "E4" }), accNotesXml(bassE, 1, 2, { stem: "down", restAt: "F3" })];
       }
       return { chord: ch, shape, notes, xml: staffXml.concat([accNotesXml(evs, 2, 5, { tab: true })]) };
     };
     passChords.forEach((ch, i) => passBars.push(build(ch, plan.shapes[i], false)));
+    finalLast = passBars[n - 1];
     endBar = build(endChord, plan.shapes[plan.shapes.length - 1], true);
     // 每一步一張卡片(反覆時每遍都一樣):指型、手指、每條弦由右手哪根手指撥
     guide.steps = passBars.concat([endBar]).map((b, i) => {
       const rh = {};
-      for (const n of b.notes) if (!(rh[n.str] || []).includes(n.tok)) (rh[n.str] = rh[n.str] || []).push(n.tok);
+      for (const x of b.notes) if (!(rh[x.str] || []).includes(x.tok)) (rh[x.str] = rh[x.str] || []).push(x.tok);
       return { name: b.chord.name, roman: b.chord.roman, rootPc: b.chord.rootPc, shapeName: accShapeName(b.chord, plan.capo),
                frets: b.shape.frets, fingers: b.shape.fingers, rh, bassString: 6 - b.shape.frets.findIndex(f => f >= 0), end: i === passBars.length };
     });
@@ -893,7 +998,7 @@ function accGenerate(opts){
   }
 
   const bars = [];
-  for (let l = 0; l < loops; l++) passBars.forEach((b, i) => bars.push({ ...b, step: i }));
+  for (let l = 0; l < loops; l++) passBars.forEach((b, i) => bars.push({ ...(l === loops - 1 && i === n - 1 ? finalLast : b), step: i }));
   bars.push({ ...endBar, step: passBars.length });
 
   const styleName = L(style.zh, style.en);
@@ -907,10 +1012,11 @@ function accGenerate(opts){
              : `<staves>2</staves><clef number="1"><sign>G</sign><line>2</line></clef><clef number="2"><sign>F</sign><line>4</line></clef>`) + `</attributes>`;
   const tempoXml = `<direction placement="above"><direction-type><metronome><beat-unit>quarter</beat-unit><per-minute>${opts.tempo}</per-minute></metronome></direction-type>`
     + `<sound tempo="${opts.tempo}"/></direction>`;
-  // 移調夾標在第一小節第二個音上方(跟速度記號放在一起會黏成一串)
-  const capoXml = isGtr && plan.capo ? `<direction placement="above"><direction-type><words>Capo ${plan.capo}</words></direction-type></direction>` : "";
+  // 移調夾、Swing 標在第一小節第二個音上方(跟速度記號放在一起會黏成一串)
+  const marks = [isGtr && plan.capo ? `Capo ${plan.capo}` : "", guide.swing ? "Swing" : ""].filter(Boolean).join(" · ");
+  const capoXml = marks ? `<direction placement="above"><direction-type><words>${marks}</words></direction-type></direction>` : "";
   // 鋼琴有踩踏板的型態標踏板記號(每小節換一次 = 換和弦時換踏板,跟播放一樣);第一小節標力度 mp
-  const pedalPat = !isGtr && ACC_PIANO_PATTERNS[guide.pattern].pedal;
+  const pedalPat = !isGtr && guide.pedal;
   const pedal = type => `<direction placement="below"><direction-type><pedal type="${type}" line="yes"/></direction-type><staff>2</staff></direction>`;
   const dyn = `<direction placement="below"><direction-type><dynamics><mp/></dynamics></direction-type><staff>1</staff></direction>`;
   const backup = `<backup><duration>16</duration></backup>`;
@@ -1169,7 +1275,10 @@ function pianoSampleFor(m, L){
       if (s) return s;
     }
   }
-  return null;
+  // 播放中換調、新調的取樣還在背景下載:先用已載好、音高最近的取樣移調代替,不要沒聲音
+  let best = null;
+  for (const v of Object.values(pianoBuf)) if (!best || Math.abs(v.c - m) + Math.abs(v.L - L) * 0.1 < Math.abs(best.c - m) + Math.abs(best.L - L) * 0.1) best = v;
+  return best;
 }
 /* 這份伴奏要用的取樣:先每個音各載一層(用最多次的那層,載完就能播),其餘的層在背景補 */
 async function loadPianoFor(gen, lenSec, onProgress){
@@ -1341,8 +1450,13 @@ async function loadGuitarFor(gen, onProgress){
 }
 function gtrSampleFor(m, Lr){
   const root = gtrNearestRoot(m);
-  const list = gtrMan._roots[root].filter(n => gtrBuf[n]);
-  if (!list.length) return null;
+  let list = gtrMan._roots[root].filter(n => gtrBuf[n]);
+  if (!list.length) {   // 還沒載到(播放中換調):用已載好、音高最近的取樣移調代替
+    const have = Object.keys(gtrBuf).filter(n => gtrMan.samples[n]);
+    if (!have.length) return null;
+    const near = have.reduce((a, b) => Math.abs(gtrMan.samples[b].root - m) < Math.abs(gtrMan.samples[a].root - m) ? b : a);
+    list = have.filter(n => gtrMan.samples[n].root === gtrMan.samples[near].root);
+  }
   const want = list.filter(n => gtrMan.samples[n].L === Lr);
   const pool = want.length ? want : list;
   const k = gtrRR[root + "-" + Lr] = (gtrRR[root + "-" + Lr] || 0) + 1;
@@ -1427,71 +1541,87 @@ function playClick(when, accent){
 }
 
 /* ══ 狀態與設定(存在 localStorage)══════════════════════════════ */
-const state = Object.assign({ inst: "piano", style: "pop", prog: 0, tonic: "C", pattern: "", tempo: 0, loops: 2, loop: true, countIn: true, showScore: false },
+const state = Object.assign({ inst: "piano", style: "pop", prog: 0, tonic: "C", lh: "", rh: "", gpat: "", tempo: 0, loops: 2, loop: true, countIn: true, showScore: true, setupOpen: false },
   (() => { try { return JSON.parse(localStorage.getItem(PREF_KEY) || "null") || {}; } catch (e) { return {}; } })());
 function savePrefs(){ try { localStorage.setItem(PREF_KEY, JSON.stringify(state)); } catch (e) {} }
 let curGen = null;
 function curStyle(){ return ACC_STYLES.find(s => s.id === state.style) || ACC_STYLES[0]; }
+function curProg(){ const st = curStyle(); return st.progs[state.prog] || st.progs[0]; }
 function normalizeState(){
   const st = curStyle(); state.style = st.id;
   if (!st.progs[state.prog]) state.prog = 0;
-  const mode = st.minor ? "minor" : "major";
-  if (!ACC_KEYS[mode].some(k => k[0] === state.tonic)) state.tonic = st.minor ? "A" : "C";
-  const pats = state.inst === "guitar" ? ACC_GTR_PATTERNS : ACC_PIANO_PATTERNS;
-  if (!pats[state.pattern]) state.pattern = state.inst === "guitar" ? st.guitar : st.piano;
-  state.tempo = Math.max(40, Math.min(220, Math.round(+state.tempo) || st.tempo));
+  const pr = st.progs[state.prog], pref = pr.pref || {}, mode = pr.minor ? "minor" : "major";
+  if (!ACC_KEYS[mode].some(k => k[0] === state.tonic)) state.tonic = pr.minor ? "A" : "C";
+  if (!st.piano.lh.includes(state.lh)) state.lh = pref.lh || st.piano.lh[0];
+  if (!st.piano.rh.includes(state.rh)) state.rh = pref.rh || st.piano.rh[0];
+  if (!st.guitar.includes(state.gpat)) state.gpat = pref.guitar || st.guitar[0];
+  state.tempo = Math.max(40, Math.min(220, Math.round(+state.tempo) || pr.tempo || st.tempo));
   if (![1, 2, 3, 4].includes(+state.loops)) state.loops = 2;
   state.loops = +state.loops;
+}
+/* 換風格/進行:大調 ↔ 小調時換成關係調(C ↔ Am),型態換成新進行的建議 */
+function chooseProg(styleId, progIdx, resetAll){
+  const prevPr = curProg(), wasMinor = !!prevPr.minor, oldPc = accKeyFor(wasMinor, state.tonic).pc;
+  state.style = styleId; state.prog = progIdx;
+  const st = curStyle(), pr = curProg(), pref = pr.pref || {};
+  if (!!pr.minor !== wasMinor) {
+    const pc = pr.minor ? (oldPc + 9) % 12 : (oldPc + 3) % 12;
+    const k = ACC_KEYS[pr.minor ? "minor" : "major"].find(([nm]) => accNameParts(nm).pc === pc);
+    if (k) state.tonic = k[0];
+  }
+  if (resetAll) { state.lh = state.rh = state.gpat = ""; state.tempo = 0; }
+  if (pref.lh) state.lh = pref.lh;
+  if (pref.rh) state.rh = pref.rh;
+  if (pref.guitar) state.gpat = pref.guitar;
+  if (pr.tempo) state.tempo = pr.tempo;
+  else if (prevPr.tempo && state.tempo === prevPr.tempo) state.tempo = st.tempo;   // 從有自己速度的進行(佛朗明哥)換回來
 }
 const opt = (v, text, sel) => `<option value="${esc(v)}"${sel ? " selected" : ""}>${esc(text)}</option>`;
 const keyLabel = (k, minor) => k.replace("#", "♯").replace(/^(.)b/, "$1♭") + (minor ? "m" : "");
 function renderControls(){
   normalizeState();
-  const st = curStyle(), mode = st.minor ? "minor" : "major";
+  const st = curStyle(), pr = curProg(), mode = pr.minor ? "minor" : "major", isG = state.inst === "guitar";
   document.querySelectorAll("#instSeg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.inst === state.inst)));
   $("selStyle").innerHTML = ACC_STYLES.map(s => opt(s.id, L(s.zh, s.en), s.id === st.id)).join("");
   $("selProg").innerHTML = st.progs.map((p, i) => opt(i, L(p.zh, p.en), i === state.prog)).join("");
-  $("selKey").innerHTML = ACC_KEYS[mode].map(([k]) => opt(k, keyLabel(k, st.minor), k === state.tonic)).join("");
-  const pats = state.inst === "guitar" ? ACC_GTR_PATTERNS : ACC_PIANO_PATTERNS;
-  $("selPattern").innerHTML = Object.entries(pats).map(([k, p]) => opt(k, L(p.zh, p.en), k === state.pattern)).join("");
+  $("selKey").innerHTML = ACC_KEYS[mode].map(([k]) => opt(k, keyLabel(k, pr.minor), k === state.tonic)).join("");
+  $("selLH").innerHTML = st.piano.lh.map(k => opt(k, L(ACC_LH[k].zh, ACC_LH[k].en), k === state.lh)).join("");
+  $("selRH").innerHTML = st.piano.rh.map(k => opt(k, L(ACC_RH[k].zh, ACC_RH[k].en), k === state.rh)).join("");
+  $("selGtr").innerHTML = st.guitar.map(k => opt(k, L(ACC_GTR_PATTERNS[k].zh, ACC_GTR_PATTERNS[k].en), k === state.gpat)).join("");
+  $("fLH").hidden = $("fRH").hidden = isG; $("fGtr").hidden = !isG;
   $("inpTempo").value = state.tempo;
   $("selLoops").innerHTML = [1, 2, 3, 4].map(n => opt(n, "×" + n, n === state.loops)).join("");
   $("loopBtn").setAttribute("aria-pressed", String(!!state.loop));
   $("countBtn").setAttribute("aria-pressed", String(!!state.countIn));
+  $("setupCard").classList.toggle("open", !!state.setupOpen);
+  $("setupToggle").setAttribute("aria-expanded", String(!!state.setupOpen));
+  $("setupSummary").textContent = [L(isG ? "吉他" : "鋼琴", isG ? "Guitar" : "Piano"), L(st.zh, st.en), L(pr.zh, pr.en).split(/[((]/)[0].trim(),
+    keyLabel(state.tonic, pr.minor), state.tempo + " BPM"].join(" · ");
 }
 
 /* ══ 產生 → 預覽、練習卡片、指法說明、樂譜 ══
    主畫面是練習卡片:一步一張,鋼琴畫小鍵盤、吉他畫和弦圖,下方一排節奏格;播放時正在彈的鍵/弦再亮一層。
    樂譜是選用的(預設收起,打開時才載入 OSMD) */
 let renderTimer = 0, scoreDirty = false, selStep = 0;
+/* opts.keepPlaying:換調、型態、速度、反覆次數、語言時音樂不停 —— 下一小節起照新的排程,新調要用的取樣在背景補載 */
 function regenerate(opts = {}){
   normalizeState();
   savePrefs();
-  const keep = playing && opts.keepPlaying;   // 播放中換語言/速度:音符不變,繼續播
+  const keep = playing && opts.keepPlaying;
   if (playing && !keep) stop();
   curGen = accGenerate(state);
   selStep = Math.min(selStep, curGen.passLen);
   if (!keep && !opts.keepSel) selStep = 0;
-  renderPreview();
+  if (keep) {
+    if (nextBar != null && nextBar >= curGen.bars.length) nextBar = state.loop ? 0 : curGen.bars.length - 1;
+    const gen = curGen;
+    loadSamplesFor(gen).catch(() => {});
+  }
   renderStage();
   renderLegend();
   $("scoreSub").textContent = curGen.title;
-  if (keep) { scoreDirty = true; return; }
   clearTimeout(renderTimer);
   renderTimer = setTimeout(renderScore, opts.now ? 0 : 60);
-}
-function renderPreview(){
-  const g = curGen;
-  const chip = (name, roman, i) => `<span class="chip" role="button" tabindex="0" data-step="${i}">${esc(name)}<small>${esc(roman)}</small></span>`;
-  $("chips").innerHTML = g.passNames.map((n, i) => chip(n, g.romans[i], i)).join("")
-    + chip(g.endName, L("結尾", "end"), g.passLen);
-  let hint = "";
-  if (state.inst === "guitar") {
-    const c = g.guide.capo, sh = g.guide.shapeNames;
-    hint = c ? L(`建議移調夾 Capo ${c}:用 ${sh.join("、")} 的指型彈`, `Capo ${c} suggested — play the shapes ${sh.join(", ")}`)
-             : L("不用移調夾,全部用開放把位的指型", "No capo needed — open-position shapes");
-  }
-  $("capoHint").textContent = hint;
 }
 
 /* ── 鋼琴小鍵盤:整組進行共用同一段(從 C 或 F 開始、到 E 或 B 結束,照 HarmonyMap),
@@ -1567,19 +1697,17 @@ function renderStage(){
   let h;
   if (gd.inst === "guitar") {
     h = gd.steps.map((st, i) => `<div class="scard" role="button" tabindex="0" data-step="${i}">`
-      + `<div class="scard-name">${esc(st.shapeName)}</div>`
-      + `<div class="scard-sub">${esc(gd.capo ? L(`實際 ${st.name}`, `sounds ${st.name}`) : st.end ? L("結尾", "ending") : st.roman)}</div>`
-      + gtrSvg(st, gd.capo)
-      + `<div class="scard-sub foot">${esc(L(`T 彈第 ${st.bassString} 弦`, `T on string ${st.bassString}`))}</div></div>`).join("");
-    $("stageSub").textContent = (gd.capo ? `Capo ${gd.capo} · ` : "") + L("點卡片聽和弦", "Tap a card to hear it");
+      + `<div class="scard-head"><span class="scard-name">${esc(st.shapeName)}</span><span class="scard-sub">${esc(gd.capo ? L(`實際 ${st.name}`, `sounds ${st.name}`) : st.end ? L("結尾", "end") : st.roman)}</span></div>`
+      + gtrSvg(st, gd.capo) + `</div>`).join("");
+    $("stageSub").textContent = gd.capo ? L(`Capo ${gd.capo}:用 ${gd.shapeNames.join("、")} 的指型`, `Capo ${gd.capo}: shapes ${gd.shapeNames.join(", ")}`) : L("點卡片聽和弦", "Tap a card to hear it");
   } else {
     const win = kbWindow(g);
     h = gd.steps.map((st, i) => `<div class="scard" role="button" tabindex="0" data-step="${i}">`
-      + `<div class="scard-name">${esc(st.name)}</div>`
-      + `<div class="scard-sub">${esc(st.end ? L("結尾", "ending") : st.roman)}</div>`
+      + `<div class="scard-head"><span class="scard-name">${esc(st.name)}</span><span class="scard-sub">${esc(st.end ? L("結尾", "end") : st.roman)}</span></div>`
       + pianoKbSvg(st, win)
-      + `<div class="scard-row"><span>${esc(L("右手", "RH"))}</span><i>${esc(st.rh.join(" "))}</i><em>${esc(st.rhLabel)}</em></div>`
-      + `<div class="scard-row"><span>${esc(L("左手", "LH"))}</span><i>${esc(st.lh.join(" "))}</i></div></div>`).join("");
+      // 卡片夠寬時右手、左手排在同一橫排,不夠寬才換行
+      + `<div class="scard-hands"><div class="scard-row"><span>${esc(L("右手", "RH"))}</span><i>${esc(st.rh.join(" "))}</i><em>${esc(st.rhLabel)}</em></div>`
+      + `<div class="scard-row"><span>${esc(L("左手", "LH"))}</span><i>${esc(st.lh.join(" "))}</i></div></div></div>`).join("");
     $("stageSub").textContent = L("點卡片聽和弦", "Tap a card to hear it");
   }
   $("stageRow").innerHTML = h;
@@ -1603,7 +1731,10 @@ function renderGrid(step){
       const hold = !at.length && mine.some(x => x.at < c * u && x.at + x.dur > c * u);
       let txt = "";
       if (at.length) {
-        if (isG) txt = at[0].tok === "S" ? "↓" : `${at[0].tok}<small>${6 - at[0].str}</small>`;
+        if (isG) {   // 「T+2」= 拇指和中指同時;「123」= 三指同時;小字是第幾弦
+          const toks = [...new Set(at.map(x => x.tok))], fing = toks.filter(t => t !== "T").join("");
+          txt = toks.includes("S") ? "↓" : (toks.includes("T") ? "T" + (fing ? "+" : "") : "") + fing + `<small>${at.map(x => 6 - x.str).join("")}</small>`;
+        }
         else if (hand === "R") txt = "●";
         else txt = [...new Set(at.map(x => x.nm))].join("");
       }
@@ -1619,7 +1750,6 @@ function renderGrid(step){
 function setActiveStep(step, scroll){
   if (step === hlStep) return;
   hlStep = step;
-  document.querySelectorAll("#chips .chip").forEach(el => el.classList.toggle("on", +el.dataset.step === step));
   const cards = $("stageRow").children;
   for (const el of cards) el.classList.toggle("on", +el.dataset.step === step);
   clearHits();
@@ -1655,8 +1785,7 @@ function selectStep(step){
   audition(step);
 }
 $("stageRow").addEventListener("click", e => { const c = e.target.closest(".scard"); if (c) selectStep(+c.dataset.step); });
-$("chips").addEventListener("click", e => { const c = e.target.closest(".chip"); if (c) selectStep(+c.dataset.step); });
-for (const id of ["stageRow", "chips"]) $(id).addEventListener("keydown", e => {
+$("stageRow").addEventListener("keydown", e => {
   const c = e.target.closest("[data-step]");
   if (c && (e.key === "Enter" || e.key === " ")) { e.preventDefault(); e.stopPropagation(); selectStep(+c.dataset.step); }
 });
@@ -1689,28 +1818,35 @@ function renderLegend(){
   const g = curGen.guide;
   let h = "";
   const tag = x => `<span class="t">${x}</span>`;
+  const swing = g.swing ? "<br>" + esc(L("搖擺(Swing):八分音符彈成前長後短(約 2:1),譜上照慣例寫成平均的八分音符。", "Swing: play eighths long–short (about 2:1); written as even eighths by convention.")) : "";
   if (g.inst === "guitar") {
-    const pat = ACC_GTR_PATTERNS[g.pattern];
+    const pat = ACC_GTR_PATTERNS[g.gpat], toks = pat.seq.map(x => x[2]).join(" ");
     if (g.capo) h += `<div class="legend"><b>${esc(L(`移調夾夾第 ${g.capo} 格`, `Capo on fret ${g.capo}`))}</b> — ${esc(L("卡片上的大字是指型,小字是實際和弦。", "the big name on each card is the shape; the small one is the sounding chord."))}</div>`;
     h += `<div class="legend"><b>${esc(L("右手", "Right hand"))}</b> ${esc(L(pat.zh, pat.en))}<br>`
       + L(`${tag("T")} 拇指(彈低音弦)・${tag("1")} 食指(第 3 弦)・${tag("2")} 中指(第 2 弦)・${tag("3")} 無名指(第 1 弦)・${tag("4")} 小指(很少用)。古典吉他的 p / i / m / a 就是 T / 1 / 2 / 3。和弦圖下方標的是每條弦由哪根手指撥。`,
           `${tag("T")} thumb (bass string) · ${tag("1")} index (string 3) · ${tag("2")} middle (string 2) · ${tag("3")} ring (string 1) · ${tag("4")} pinky (rare). Classical p / i / m / a = T / 1 / 2 / 3. The letters under each diagram show which finger plucks each string.`)
-      + (pat.seq.some(x => x[2] === "T'") ? "<br>" + esc(L("交替低音:第二個 T 改彈第 4 弦(根音在第 4 弦時彈第 5 弦),低音一高一低。", "Alternating bass: the second T moves to string 4 (string 5 when the root is on string 4).")) : "")
-      + "<br>" + esc(L("節奏格:一格一個音,大字是右手手指、小字是第幾弦;播放時亮起來的那一格是現在、和弦圖上被撥的弦同時亮。同一條弦再撥時前一個音才停,換和弦時左手放開。",
-                       "Rhythm grid: one cell per note — big = right-hand finger, small = string number. While playing, the current cell and the plucked string light up. A string rings until plucked again; release when the chord changes."))
+      + (/T'/.test(toks) ? "<br>" + esc(L("交替低音:第二個 T 改彈另一條低音弦(第 4 弦,根音在第 4 弦時彈第 5 弦),低音一高一低。", "Alternating bass: the second T moves to another bass string (string 4, or 5 when the root is on string 4).")) : "")
+      + (/\+/.test(toks) ? "<br>" + esc(L("「T+2」= 拇指和中指同時撥(掐弦);「T+123」= 拇指和三指同時。", "\u201cT+2\u201d = thumb and middle together (pinch); \u201cT+123\u201d = thumb with three fingers.")) : "")
+      + (/(^| )123/.test(toks) ? "<br>" + esc(L("「123」= 食指、中指、無名指同時撥第 3、2、1 弦(像一個小和弦)。", "\u201c123\u201d = index, middle and ring pluck strings 3, 2, 1 together.")) : "")
+      + "<br>" + esc(L("節奏格:大字是右手手指、小字是第幾弦;播放時亮起來的那一格是現在、和弦圖上被撥的弦同時亮。同一條弦再撥時前一個音才停,換和弦時左手放開。",
+                       "Rhythm grid: big = right-hand finger(s), small = string number(s). While playing, the current cell and the plucked strings light up. A string rings until plucked again; release when the chord changes."))
+      + swing
       + `<br><b>${esc(L("左手", "Left hand"))}</b> ${esc(L("圓點數字 = 手指(1 食指 2 中指 3 無名指 4 小指),× 不彈、○ 空弦、橫槓 = 食指封閉;金色是根音、青色是其他和弦音。換和弦時共同的手指不要離開指板。",
                                                         "Dot numbers = fingers (1 index … 4 pinky), × muted, ○ open, bar = index-finger barre; gold = root, teal = other chord tones. Keep shared fingers down when changing chords."))}</div>`;
     $("guideSub").textContent = L("右手 T123・左手和弦圖", "Right-hand T123 · left-hand diagrams");
   } else {
-    const pat = ACC_PIANO_PATTERNS[g.pattern];
-    h += `<div class="legend"><b>${esc(L(pat.zh, pat.en))}</b> ${esc(L(pat.tipZh, pat.tipEn))}<br>`
-      + esc(L("右手轉位怎麼選:換和弦時,兩個和弦共同的音按住不動,其他音往最近的和弦音移動,所以右手不會一直彈原位,而是在同一個音域裡用轉位接起來(卡片上標了每個和弦用的轉位)。",
-              "Choosing RH inversions: keep the common tones, move the other notes to the nearest chord tone, so the right hand stays in one area using inversions (each card shows which one)."))
-      + (g.pattern === "jazz" ? "<br>" + esc(L("爵士右手不彈根音(左手已經有了):A 型由 3 音起、B 型由 7 音起,交替使用讓聲部平順。", "Jazz RH leaves out the root (the LH has it): type A starts on the 3rd, type B on the 7th, alternating for smooth voice-leading.")) : "")
+    const lh = ACC_LH[g.lh], rh = ACC_RH[g.rh];
+    h += `<div class="legend"><b>${esc(L("左手", "LH"))}:${esc(L(lh.zh, lh.en))}</b> ${esc(L(lh.tipZh, lh.tipEn))}<br>`
+      + `<b>${esc(L("右手", "RH"))}:${esc(L(rh.zh, rh.en))}</b> ${esc(L(rh.tipZh, rh.tipEn))}`
+      + (lh.pedal ? "<br>" + esc(L("每小節換和弦時換踏板(譜上的 Ped. 記號)。", "Change the pedal with each chord (Ped. marks in the score).")) : "")
+      + "<br>" + esc(L("右手轉位怎麼選:換和弦時,兩個和弦共同的音按住不動,其他音往最近的和弦音移動,所以右手不會一直彈原位,而是在同一個音域裡用轉位接起來(卡片上標了每個和弦用的轉位)。左手一定在右手下面,兩隻手不會按到同一個鍵。",
+              "Choosing RH inversions: keep the common tones, move the other notes to the nearest chord tone, so the right hand stays in one area using inversions (each card shows which one). The left hand always stays below the right hand."))
+      + (g.rootless ? "<br>" + esc(L("右手用爵士無根音聲位(根音交給左手):A 型由 3 音起、B 型由 7 音起,交替使用讓聲部平順。", "The RH uses rootless voicings (the LH has the root): type A starts on the 3rd, type B on the 7th, alternating for smooth voice-leading.")) : "")
+      + swing
       + "<br>" + esc(L("鍵盤:金色是根音、青色是其他和弦音;上方括號是右手、下方括號是左手;每張卡片的鍵盤是同一段,看得出手怎麼移。播放時再亮一層的是正在彈的鍵。節奏格:● 是右手和弦、下排是左手彈的音。",
                        "Keyboard: gold = root, teal = other chord tones; the bracket above is the right hand, below is the left hand; every card shows the same stretch of keys so you can see how the hands move. Keys that light up brighter are sounding now. Rhythm grid: ● = right-hand chord, bottom row = left-hand notes."))
       + `</div>`;
-    $("guideSub").textContent = L("右手轉位・左手型態", "RH inversions · LH pattern");
+    $("guideSub").textContent = L(`左手 ${lh.zh}・右手 ${rh.zh}`, `LH ${lh.en} · RH ${rh.en}`);
   }
   $("guide").innerHTML = h;
 }
@@ -1824,18 +1960,20 @@ function nextBarIndex(bi, loop){ return bi + 1 < curGen.bars.length ? bi + 1 : (
 function scheduleBar(gen, bi, t, tempo, loop, pass, vis){
   const bar = gen.bars[bi], s16 = 60 / tempo / 4, barSec = 16 * s16, last = bi === gen.bars.length - 1;
   const nb = nextBarIndex(bi, loop);
+  // 搖擺(藍調、爵士):反拍的八分音符晚 1/3 拍(前長後短 2:1),譜上照慣例寫平均八分
+  const sw = gen.guide.swing ? a => (a % 4 === 2 ? a + 2 / 3 : a) : a => a;
   const show = (n, when) => { if (vis) visEvents.push({ bi, m: n.midi, s: n.str, t0: when, t1: when + Math.max(0.12, n.dur * s16 * 0.92) }); };
   if (gen.guide.inst === "piano") {
-    const pat = gen.guide.pattern, pedal = ACC_PIANO_PATTERNS[pat].pedal;
+    const pedal = gen.guide.pedal;
     const barEnd = t + barSec + (last && !loop ? 1.6 : 0.03);
     bar.notes.forEach((n, k) => {
       const r = seeded(bi * 97 + pass * 7919, k);
-      const when = t + n.at * s16 + (n.at ? 0.004 : 0) + (n.hand === "R" ? r * 0.008 : r * 0.004);
-      const keyUp = t + (n.at + n.dur) * s16 - 0.012;
+      const when = t + sw(n.at) * s16 + (n.at ? 0.004 : 0) + (n.hand === "R" ? r * 0.008 : r * 0.004);
+      const keyUp = t + sw(n.at + n.dur) * s16 - 0.012;
       const vel = Math.max(20, Math.min(110, n.vel + (r - 0.5) * 6));
       let damper = keyUp, ped = false;
       if (pedal || last) { damper = barEnd; ped = true; }
-      else if (pat === "jazz" || n.hand === "R") damper = barEnd;   // 半踏板:放鍵後還有一點餘音
+      else if (n.hand === "R") damper = barEnd;   // 不踩踏板的型態:右手半踏板(放鍵後還有一點餘音),左手乾淨
       playPianoNote(n.midi, when, keyUp, damper, vel, ped);
       show({ ...n, str: null }, when);
     });
@@ -1843,12 +1981,12 @@ function scheduleBar(gen, bi, t, tempo, loop, pass, vis){
     const nextBarObj = nb != null ? gen.bars[nb] : null, sameNext = nextBarObj && nextBarObj.chord.name === bar.chord.name;
     bar.notes.forEach((n, k) => {
       const r = seeded(bi * 131 + pass * 7919, k);
-      const when = t + n.at * s16 + n.strum + r * 0.006;
+      const when = t + sw(n.at) * s16 + n.strum + r * 0.006;
       let rel;
       const again = bar.notes.find(x => x.str === n.str && x.at > n.at);
-      if (again) rel = t + again.at * s16;
+      if (again) rel = t + sw(again.at) * s16;
       else if (last) rel = t + barSec + (loop ? 0.02 : 1.6);
-      else if (sameNext) { const a2 = nextBarObj.notes.find(x => x.str === n.str); rel = t + barSec + (a2 ? a2.at * s16 : barSec); }
+      else if (sameNext) { const a2 = nextBarObj.notes.find(x => x.str === n.str); rel = t + barSec + (a2 ? sw(a2.at) * s16 : barSec); }
       else rel = t + barSec + 0.02;   // 換和弦:左手放開
       const vel = Math.max(30, Math.min(120, n.vel + (r - 0.5) * 8));
       playGuitarNote(n.midi, when, rel, vel, n.str, r);
@@ -1878,7 +2016,7 @@ function visualTick(){
   const now = audioCtx.currentTime - (audioCtx.outputLatency || 0);
   let cur = null;
   for (const x of timeline) if (x.t <= now) cur = x;
-  if (!cur) return;
+  if (!cur || !curGen.bars[cur.bi]) return;
   const step = curGen.bars[cur.bi].step;
   setActiveStep(step, true);
   const pos = Math.min(0.999, (now - cur.t) / cur.sec);
@@ -1897,8 +2035,7 @@ function setStatus(s){ $("status").textContent = s || ""; }
 function setPlayUI(on){
   $("playLabel").textContent = T(on ? "stop" : "play");
   const icon = on ? '<rect x="6" y="6" width="12" height="12" rx="1.5" fill="currentColor"/>' : '<path d="M7 4.5v15l12-7.5z" fill="currentColor"/>';
-  $("playIcon").innerHTML = icon; $("stagePlayIcon").innerHTML = icon;
-  $("stagePlay").setAttribute("aria-label", T(on ? "stop" : "play")); $("stagePlay").title = T(on ? "stop" : "play");
+  $("playIcon").innerHTML = icon;
 }
 async function loadSamplesFor(gen, onProgress){
   if (gen.guide.inst === "guitar") await loadGuitarFor(gen, onProgress);
@@ -1950,9 +2087,9 @@ function stop(){
     for (const n of list) { try { n.stop(now + 0.2); } catch (e) {} }
     setTimeout(() => { if (!playing && audioCtx) { masterOut.gain.cancelScheduledValues(0); masterOut.gain.value = 1; } }, 260);
   }
-  visEvents = []; clearHits(); markGridCell(-1); hlStep = -1;
+  visEvents = []; timeline = []; clearHits(); markGridCell(-1); hlStep = -1;
   $("stageRow").classList.remove("playing");
-  if (curGen) setActiveStep(selStep, false);
+  if (curGen) setActiveStep(selStep, true);
   if (osmd && osmd.cursor) { try { osmd.cursor.reset(); cursorIdx = 0; } catch (e) {} }
   if (scoreDirty) { scoreDirty = false; renderScore(); }
 }
@@ -2024,29 +2161,32 @@ $("langToggle").onclick = () => applyLanguage(LANG === "zh" ? "en" : "zh");
 $("instSeg").addEventListener("click", e => {
   const b = e.target.closest("button[data-inst]");
   if (!b || b.dataset.inst === state.inst) return;
-  state.inst = b.dataset.inst; state.pattern = "";
+  state.inst = b.dataset.inst;
   renderControls(); regenerate();
 });
-$("selStyle").addEventListener("change", e => { state.style = e.target.value; state.prog = 0; state.pattern = ""; state.tempo = 0; renderControls(); regenerate(); });
-$("selProg").addEventListener("change", e => { state.prog = +e.target.value; regenerate(); });
-$("selKey").addEventListener("change", e => { state.tonic = e.target.value; regenerate(); });
-$("selPattern").addEventListener("change", e => { state.pattern = e.target.value; regenerate(); });
-$("selLoops").addEventListener("change", e => { state.loops = +e.target.value; regenerate(); });
+$("selStyle").addEventListener("change", e => { chooseProg(e.target.value, 0, true); renderControls(); regenerate(); });
+$("selProg").addEventListener("change", e => { chooseProg(state.style, +e.target.value, false); renderControls(); regenerate(); });
+// 下面這些在播放中改也不會停:下一小節起生效
+$("selKey").addEventListener("change", e => { state.tonic = e.target.value; renderControls(); regenerate({ keepPlaying: true, keepSel: true }); });
+$("selLH").addEventListener("change", e => { state.lh = e.target.value; regenerate({ keepPlaying: true, keepSel: true }); });
+$("selRH").addEventListener("change", e => { state.rh = e.target.value; regenerate({ keepPlaying: true, keepSel: true }); });
+$("selGtr").addEventListener("change", e => { state.gpat = e.target.value; regenerate({ keepPlaying: true, keepSel: true }); });
+$("selLoops").addEventListener("change", e => { state.loops = +e.target.value; regenerate({ keepPlaying: true, keepSel: true }); });
 function setTempo(v){
   state.tempo = Math.max(40, Math.min(220, Math.round(+v) || state.tempo));
-  $("inpTempo").value = state.tempo;
-  regenerate({ keepPlaying: true });   // 播放中改速度:下一小節起生效,樂譜等停止後再重畫
+  renderControls();
+  regenerate({ keepPlaying: true, keepSel: true });
 }
 $("inpTempo").addEventListener("change", e => setTempo(e.target.value));
 $("tempoDown").addEventListener("click", () => setTempo(state.tempo - 4));
 $("tempoUp").addEventListener("click", () => setTempo(state.tempo + 4));
+$("setupToggle").addEventListener("click", () => { state.setupOpen = !state.setupOpen; savePrefs(); renderControls(); });
 $("loopBtn").addEventListener("click", () => {
   state.loop = !state.loop; $("loopBtn").setAttribute("aria-pressed", String(state.loop)); savePrefs();
   if (playing && state.loop && nextBar == null) { nextBar = 0; playEnd = Infinity; }
 });
 $("countBtn").addEventListener("click", () => { state.countIn = !state.countIn; $("countBtn").setAttribute("aria-pressed", String(state.countIn)); savePrefs(); });
 $("playBtn").addEventListener("click", play);
-$("stagePlay").addEventListener("click", play);
 document.addEventListener("keydown", e => {
   if (e.code === "Space" && !/INPUT|SELECT|TEXTAREA|BUTTON/.test(document.activeElement.tagName)) { e.preventDefault(); play(); }
 });

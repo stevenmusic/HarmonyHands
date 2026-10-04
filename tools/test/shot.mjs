@@ -1,4 +1,4 @@
-// 桌機 1400×900 / 手機 390×844:播放中截圖(練習卡片、亮鍵、節奏格),停止後截頂部,打開樂譜截一張
+// 桌機 1400×900 / 手機 390×844 / 橫向 844×390:播放中截圖(練習卡片、亮鍵、節奏格),停止後截頂部,再截樂譜
 import { open } from "./harness.mjs";
 const OUT = process.env.OUT || "./";
 const only = process.argv[2];
@@ -9,7 +9,7 @@ for (const [name, vp, mobile] of [["desktop", { width: 1400, height: 900 }, fals
     await page.evaluate(async ([inst, style, tonic, light]) => {
       try { localStorage.setItem(THEME_KEY, light ? "light" : "dark"); } catch (e) {}
       applyTheme();
-      Object.assign(state, { inst, style, prog: 0, tonic, pattern: "", tempo: 0, countIn: false, showScore: false });
+      Object.assign(state, { inst, style, prog: 0, tonic, lh: "", rh: "", gpat: "", tempo: 0, countIn: false, showScore: true, setupOpen: false });
       applyScoreToggle(); renderControls(); regenerate({ now: true });
     }, [inst, style, tonic, light]);
     await page.click("#playBtn");
@@ -19,13 +19,13 @@ for (const [name, vp, mobile] of [["desktop", { width: 1400, height: 900 }, fals
       sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth, stageTop: Math.round($("stageCard").getBoundingClientRect().top) }));
     console.log(name, inst, JSON.stringify(st));
     await page.screenshot({ path: `${OUT}${name}-${inst}-playing.png`, fullPage: name === "desktop" });
-    await page.click("#stagePlay"); await page.waitForTimeout(300);
+    await page.click("#playBtn"); await page.waitForTimeout(300);
     if (name !== "desktop") {
       await page.evaluate(() => window.scrollTo(0, 0)); await page.waitForTimeout(200);
       await page.screenshot({ path: `${OUT}${name}-${inst}-top.png` });
     }
     if (name !== "landscape") {
-      await page.evaluate(async () => { const b = window.__scoreReady || 0; $("scoreToggle").click(); while ((window.__scoreReady || 0) === b) await new Promise(r => setTimeout(r, 50)); });
+      await page.waitForFunction(() => window.__scoreReady >= 1 && osmd && osmd.__xml === curGen.xml, null, { timeout: 60000 });   // 樂譜預設打開
       await page.evaluate(() => window.scrollTo(0, $("scoreCard").offsetTop - 60)); await page.waitForTimeout(300);
       await page.screenshot({ path: `${OUT}${name}-${inst}-score.png` });
     }

@@ -2,12 +2,14 @@
 import { open } from "./harness.mjs";
 const OUT = process.env.OUT || "./";
 const cases = (process.argv[2] ? [process.argv.slice(2)] : [
-  ["piano", "pop", "0", "C", ""], ["piano", "canon", "1", "D", ""], ["piano", "folk", "0", "G", ""], ["piano", "blues", "0", "F", ""], ["piano", "jazz", "0", "Bb", ""],
-  ["guitar", "pop", "0", "C", ""], ["guitar", "canon", "1", "C", ""], ["guitar", "ballad", "0", "C", ""], ["guitar", "minor", "1", "A", "quarter"]]);
+  ["piano", "pop", "0", "C", ""], ["piano", "ballad", "1", "D", "broken1510+arp"], ["piano", "folk", "0", "G", ""], ["piano", "rock", "2", "E", ""],
+  ["piano", "blues", "0", "F", ""], ["piano", "jazz", "0", "Bb", ""], ["piano", "latin", "0", "C", ""],
+  ["guitar", "pop", "0", "C", ""], ["guitar", "folk", "0", "G", "travis"], ["guitar", "jazz", "1", "C", "comp4"], ["guitar", "latin", "0", "C", ""], ["guitar", "ballad", "0", "C", ""]]);
 const { browser, page, errors } = await open({ viewport: { width: 1400, height: 900 } });
 for (const [inst, style, prog, tonic, pattern] of cases) {
   await page.evaluate(async ([inst, style, prog, tonic, pattern]) => {
-    Object.assign(state, { inst, style, prog: +prog, tonic, pattern, tempo: 0, showScore: true, loops: 1 });
+    const [pa, pb] = (pattern || "").split("+");
+    Object.assign(state, { inst, style, prog: +prog, tonic, lh: inst === "piano" ? pa || "" : "", rh: pb || "", gpat: inst === "guitar" ? pa || "" : "", tempo: 0, showScore: true, loops: 1 });
     applyScoreToggle(); renderControls();
     const b = window.__scoreReady || 0; regenerate({ now: true });
     while ((window.__scoreReady || 0) === b) await new Promise(r => setTimeout(r, 40));

@@ -4,7 +4,7 @@ import fs from "node:fs";
 const [inst, style, prog, tonic, sec, out] = process.argv.slice(2);
 const { browser, page, errors } = await open();
 const info = await page.evaluate(async ([inst, style, prog, tonic]) => {
-  Object.assign(state, { inst, style, prog: +prog, tonic, pattern: "", tempo: 0 });
+  Object.assign(state, { inst, style, prog: +prog, tonic, lh: "", rh: "", gpat: "", tempo: 0 });
   renderControls(); regenerate({ now: true });
   // D 和弦/吉他音高檢查:每個音 = 空弦 + 格數 + capo
   const g = curGen, bad = [];

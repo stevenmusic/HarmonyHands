@@ -5,7 +5,7 @@ const res = await page.evaluate(async () => {
   const out = [];
   state.showScore = true; applyScoreToggle();
   for (const inst of ["piano", "guitar"]) for (const st of ACC_STYLES) for (let p = 0; p < st.progs.length; p++) {
-    Object.assign(state, { inst, style: st.id, prog: p, pattern: "", tempo: 0, tonic: st.minor ? "A" : "C" });
+    Object.assign(state, { inst, style: st.id, prog: p, lh: "", rh: "", gpat: "", tempo: 0, tonic: st.progs[p].minor ? "A" : "C" });
     renderControls();
     const before = window.__scoreReady || 0;
     regenerate({ now: true });
