@@ -174,6 +174,7 @@ main{
 .field select:focus,.field input:focus{outline:none;border-color:var(--gold)}
 .tempo-row{display:flex;gap:6px;align-items:center}
 .tempo-row input{flex:1 1 auto;text-align:center}
+.tempo-row select{flex:1 1 auto;min-width:0}
 .tempo-row .btn{flex:none;width:36px;padding:0;height:36px}
 /* 手機:設定收成一行摘要(點了展開),練習卡片與樂譜不用往下滑就看得到 */
 .setup-summary{display:none;width:100%;align-items:center;gap:8px;border:0;background:transparent;color:var(--ivory);
@@ -364,7 +365,12 @@ body.light{background:
           </div></div>
         <div class="field" id="fStyle"><label for="selStyle" data-i18n="lblStyle">風格</label><select id="selStyle"></select></div>
         <div class="field wide" id="fProg"><label for="selProg" data-i18n="lblProg">和弦進行</label><select id="selProg"></select></div>
-        <div class="field" id="fKey"><label for="selKey" data-i18n="lblKey">調</label><select id="selKey"></select></div>
+        <div class="field" id="fKey"><label for="selKey" data-i18n="lblKey">調</label>
+          <div class="tempo-row key-row" role="group" data-i18n-attr="aria-label:lblKey" aria-label="調">
+            <button class="btn" id="keyDown" data-i18n-attr="aria-label:keyDown,title:keyDown" aria-label="降半音" title="降半音"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m15 18-6-6 6-6"/></svg></button>
+            <select id="selKey"></select>
+            <button class="btn" id="keyUp" data-i18n-attr="aria-label:keyUp,title:keyUp" aria-label="升半音" title="升半音"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m9 18 6-6-6-6"/></svg></button>
+          </div></div>
         <div class="field" id="fLoops"><label for="selLoops" data-i18n="lblLoops">反覆次數</label><select id="selLoops"></select></div>
         <div class="field wide" id="fLH"><label for="selLH" data-i18n="lblLH">左手型態</label><select id="selLH"></select></div>
         <div class="field wide" id="fRH"><label for="selRH" data-i18n="lblRH">右手型態</label><select id="selRH"></select></div>
@@ -435,7 +441,7 @@ const I18N = {
     setupTitle: "伴奏設定", setupSub: "選風格與和弦進行,產生伴奏樂譜",
     instPiano: "鋼琴", instGuitar: "吉他", lblInst: "樂器", lblLH: "左手型態", lblRH: "右手型態", lblGtr: "右手指法(T123)",
     lblStyle: "風格", lblProg: "和弦進行", lblKey: "調", lblTempo: "速度(BPM)", lblLoops: "反覆次數",
-    tempoDown: "慢一點", tempoUp: "快一點",
+    tempoDown: "慢一點", tempoUp: "快一點", keyDown: "降半音", keyUp: "升半音",
     play: "播放", stop: "停止", loop: "循環", countIn: "預備拍",
     scoreTitle: "樂譜", guideTitle: "指法說明", stageTitle: "練習", scoreShow: "顯示樂譜", scoreHide: "收起樂譜",
     loadingPiano: "載入鋼琴取樣… {pct}%", loadingGuitar: "載入吉他取樣… {pct}%", ready: "取樣已就緒", loadFail: "取樣載入失敗,請檢查網路",
@@ -448,7 +454,7 @@ const I18N = {
     setupTitle: "Setup", setupSub: "Pick a style and progression to generate an accompaniment",
     instPiano: "Piano", instGuitar: "Guitar", lblInst: "Instrument", lblLH: "Left hand", lblRH: "Right hand", lblGtr: "Right-hand picking (T123)",
     lblStyle: "Style", lblProg: "Progression", lblKey: "Key", lblTempo: "Tempo (BPM)", lblLoops: "Repeats",
-    tempoDown: "Slower", tempoUp: "Faster",
+    tempoDown: "Slower", tempoUp: "Faster", keyDown: "Down a semitone", keyUp: "Up a semitone",
     play: "Play", stop: "Stop", loop: "Loop", countIn: "Count-in",
     scoreTitle: "Score", guideTitle: "Fingering Guide", stageTitle: "Practice", scoreShow: "Show score", scoreHide: "Hide score",
     loadingPiano: "Loading piano samples… {pct}%", loadingGuitar: "Loading guitar samples… {pct}%", ready: "Samples ready", loadFail: "Could not load samples — check your connection",
@@ -463,60 +469,118 @@ function T(k, vars){ let s = (I18N[LANG] && I18N[LANG][k]) || I18N.zh[k] || k; i
    鋼琴:右手挑「離上一個和弦最近」的轉位(共同音不動、其他音走最近),左手依伴奏型態;
    吉他:指型優先開放和弦,不夠時建議移調夾;右手 T123(台灣民謠吉他慣例,= 古典吉他 p/i/m/a) */
 /* 風格:每個風格只列這個風格常用的和弦進行與伴奏型態。小調是調式不是風格:小調進行放在所屬的風格裡(minor: true,調的選單換成小調)。
-   進行:羅馬數字(大寫大三、小寫小三;7 / maj7 七和弦;/3 /5 /b7 = 轉位低音是和弦的第幾音),名稱附 C 調(小調附 A 小調)的例子。
+   進行分層次(使用者要求):基本 / 進階 × 小節數(4、8;藍調另有 12),選單用分組標題顯示。8 小節是真正 8 個小節的進行,不是 4 小節重複兩次。
+     - 基本:三和弦(不轉位)。藍調、爵士、R&B、巴薩諾瓦本來就是七和弦起跳,它們的基本層用純七和弦
+     - 進階(lv: "a"):七和弦以上,含延伸和弦(9、11、13、♭9、♯9)、分數和弦;鋼琴右手照和弦種類省略根音、五音(ACC_QUAL.rh),注重好聽而不是每個音都彈到
+   進行:羅馬數字(大寫 = 大三度家族、小寫 = 小三度家族;字尾見 ACC_SUFFIX;/3 /5 = 轉位、/b7 /9… = 低音離根音的級數),名稱附 C 調(小調附 A 小調)的例子。
+   end:結尾補的主和弦(沒寫就照層次:基本 I / i、全是七和弦 Imaj7 / i7,進階 Imaj9 / i9,藍調 I7 / I13)。
    piano.lh / piano.rh / guitar:這個風格可選的型態,第一個是預設;進行的 pref 可以換掉預設(例:拉丁裡的佛朗明哥不用巴薩諾瓦低音)。
    swing:播放時八分音符前長後短(譜上照慣例寫平均八分 + 「Swing」);voicing "rootless":右手用爵士無根音聲位 */
+const ACC_FLAMENCO = { tempo: 96, pref: { lh: "broken158", rh: "half", guitar: "arp8" } };
 const ACC_STYLES = [
   { id: "pop", zh: "流行", en: "Pop", tempo: 84,
     progs: [
       { ch: "I V vi IV", zh: "1-5-6-4(C-G-Am-F,最常見)", en: "I–V–vi–IV (C–G–Am–F, the classic)" },
       { ch: "vi IV I V", zh: "6-4-1-5(Am-F-C-G)", en: "vi–IV–I–V (Am–F–C–G)" },
       { ch: "I vi IV V", zh: "1-6-4-5(C-Am-F-G,50 年代)", en: "I–vi–IV–V (C–Am–F–G, '50s)" },
-      { ch: "IVmaj7 V7 iii7 vi7", zh: "4-5-3-6 王道進行(日系,Fmaj7-G7-Em7-Am7)", en: "IV–V–iii–vi Royal Road (J-pop, Fmaj7–G7–Em7–Am7)" },
-      { ch: "IV V iii vi ii V I I", zh: "4-5-3-6-2-5-1(華語流行,F-G-Em-Am-Dm-G-C)", en: "IV–V–iii–vi–ii–V–I (Mandopop)" } ],
+      { ch: "I IV vi V", zh: "1-4-6-5(C-F-Am-G)", en: "I–IV–vi–V (C–F–Am–G)" },
+      { ch: "IV V iii vi ii V I I", zh: "4-5-3-6-2-5-1(華語流行,F-G-Em-Am-Dm-G-C-C)", en: "IV–V–iii–vi–ii–V–I (Mandopop, F–G–Em–Am–Dm–G–C–C)" },
+      { ch: "I vi IV V I vi ii V", zh: "1-6-4-5 + 1-6-2-5(C-Am-F-G-C-Am-Dm-G)", en: "I–vi–IV–V + I–vi–ii–V (C–Am–F–G–C–Am–Dm–G)" },
+      { lv: "a", ch: "IVmaj7 V7 iii7 vi7", zh: "4-5-3-6 王道進行(日系,Fmaj7-G7-Em7-Am7)", en: "IV–V–iii–vi Royal Road (J-pop, Fmaj7–G7–Em7–Am7)" },
+      { lv: "a", ch: "IVmaj9 V9sus4 iii7 vi9", zh: "王道進行・加張力(Fmaj9-G9sus4-Em7-Am9)", en: "Royal Road with tensions (Fmaj9–G9sus4–Em7–Am9)" },
+      { lv: "a", ch: "IVmaj7 III7 vi7 I7", end: "IVmaj9", zh: "丸之內進行(Fmaj7-E7-Am7-C7)", en: "Marunouchi progression (Fmaj7–E7–Am7–C7)" },
+      { lv: "a", ch: "Iadd9 V/3 vi7 IVmaj7", end: "Iadd9", zh: "1-5-6-4・加九音與轉位(Cadd9-G/B-Am7-Fmaj7)", en: "I–V–vi–IV with add9 & inversion (Cadd9–G/B–Am7–Fmaj7)" },
+      { lv: "a", ch: "IVmaj7 V9sus4 iii7 VI7b9 ii9 V13 Imaj9 V7sus4", zh: "4-5-3-6-2-5-1・進階(Fmaj7-G9sus4-Em7-A7♭9-Dm9-G13-Cmaj9-G7sus4)",
+        en: "IV–V–iii–VI–ii–V–I, advanced (Fmaj7–G9sus4–Em7–A7♭9–Dm9–G13–Cmaj9–G7sus4)" } ],
     piano: { lh: ["oct332", "broken158", "hold"], rh: ["pop332", "half", "arp"] }, guitar: ["alt8", "arp8", "arp16", "quarter"] },
   { id: "ballad", zh: "抒情", en: "Ballad", tempo: 68,
     progs: [
-      { ch: "I V vi iii IV I IV V", zh: "卡農 1-5-6-3-4-1-4-5(C-G-Am-Em-F-C-F-G)", en: "Canon I–V–vi–iii–IV–I–IV–V" },
-      { ch: "I V/3 vi iii/5 IV I/3 IV V", zh: "卡農・轉位低音下行(C-G/B-Am-Em/G-F-C/E-F-G)", en: "Canon, descending bass (C–G/B–Am–Em/G–F–C/E–F–G)" },
-      { ch: "I V/3 vi vi/b7 IV I/3 ii V", zh: "低音下行 1-7-6-5-4-3-2-5(C-G/B-Am-Am/G-F-C/E-Dm-G)", en: "Descending bass (C–G/B–Am–Am/G–F–C/E–Dm–G)" },
-      { ch: "i iv V7 i", minor: true, zh: "小調 i-iv-V7-i(Am-Dm-E7-Am)", en: "Minor i–iv–V7–i (Am–Dm–E7–Am)" } ],
+      { ch: "IV I V vi", zh: "4-1-5-6(F-C-G-Am)", en: "IV–I–V–vi (F–C–G–Am)" },
+      { ch: "i iv V i", minor: true, zh: "小調 i-iv-V-i(Am-Dm-E-Am)", en: "Minor i–iv–V–i (Am–Dm–E–Am)" },
+      { ch: "I iii IV iv", zh: "1-3-4-4m 借用小四級(C-Em-F-Fm)", en: "I–iii–IV–iv, borrowed iv (C–Em–F–Fm)" },
+      { ch: "I V vi iii IV I IV V", zh: "卡農 1-5-6-3-4-1-4-5(C-G-Am-Em-F-C-F-G)", en: "Canon I–V–vi–iii–IV–I–IV–V (C–G–Am–Em–F–C–F–G)" },
+      { ch: "i bVI bIII bVII iv i V V", minor: true, zh: "小調 i-♭VI-♭III-♭VII-iv-i-V(Am-F-C-G-Dm-Am-E-E)", en: "Minor i–♭VI–♭III–♭VII–iv–i–V (Am–F–C–G–Dm–Am–E–E)" },
+      { lv: "a", ch: "Imaj7 iii7 IVmaj7 V7sus4", zh: "1-3-4-5 七和弦(Cmaj7-Em7-Fmaj7-G7sus4)", en: "I–iii–IV–V sevenths (Cmaj7–Em7–Fmaj7–G7sus4)" },
+      { lv: "a", ch: "i9 iv7 bVImaj7 V7b9", minor: true, zh: "小調 i-iv-♭VI-V・加張力(Am9-Dm7-Fmaj7-E7♭9)", en: "Minor i–iv–♭VI–V with tensions (Am9–Dm7–Fmaj7–E7♭9)" },
+      { lv: "a", ch: "Imaj7 V/3 vi7 iii7/3 IVmaj7 I/3 ii7 V7sus4", zh: "卡農・低音下行(Cmaj7-G/B-Am7-Em7/G-Fmaj7-C/E-Dm7-G7sus4)",
+        en: "Canon, descending bass (Cmaj7–G/B–Am7–Em7/G–Fmaj7–C/E–Dm7–G7sus4)" },
+      { lv: "a", ch: "i9 i7/b7 vi7b5 bVImaj7 v7 iv9 ii7b5 V7b9", minor: true, zh: "小調低音下行(Am9-Am7/G-F♯m7♭5-Fmaj7-Em7-Dm9-Bm7♭5-E7♭9)",
+        en: "Minor descending line (Am9–Am7/G–F♯m7♭5–Fmaj7–Em7–Dm9–Bm7♭5–E7♭9)" } ],
     piano: { lh: ["broken158", "broken1510", "hold"], rh: ["half", "arp", "block"] }, guitar: ["arp16", "arp8", "quarter"] },
   { id: "folk", zh: "民謠", en: "Folk", tempo: 96,
     progs: [
       { ch: "I IV I V", zh: "1-4-1-5(C-F-C-G)", en: "I–IV–I–V (C–F–C–G)" },
       { ch: "I IV V I", zh: "1-4-5-1(C-F-G-C)", en: "I–IV–V–I (C–F–G–C)" },
-      { ch: "I vi ii V", zh: "1-6-2-5(C-Am-Dm-G)", en: "I–vi–ii–V (C–Am–Dm–G)" } ],
+      { ch: "I vi ii V", zh: "1-6-2-5(C-Am-Dm-G)", en: "I–vi–ii–V (C–Am–Dm–G)" },
+      { ch: "I IV I V I IV V I", zh: "1-4-1-5-1-4-5-1(C-F-C-G-C-F-G-C)", en: "I–IV–I–V–I–IV–V–I (C–F–C–G–C–F–G–C)" },
+      { lv: "a", ch: "Iadd9 IVmaj7 vi7 V7sus4", end: "Iadd9", zh: "1-4-6-5・開放和弦色彩(Cadd9-Fmaj7-Am7-G7sus4)", en: "I–IV–vi–V, open-string colours (Cadd9–Fmaj7–Am7–G7sus4)" },
+      { lv: "a", ch: "Iadd9 V/3 vi7 IVmaj7 I/5 IVadd9 V7sus4 V7", end: "Iadd9", zh: "民謠 8 小節・轉位低音(Cadd9-G/B-Am7-Fmaj7-C/G-Fadd9-G7sus4-G7)",
+        en: "Folk 8 bars with inversions (Cadd9–G/B–Am7–Fmaj7–C/G–Fadd9–G7sus4–G7)" } ],
     piano: { lh: ["boom", "alberti", "broken158"], rh: ["offbeat", "half", "quarter"] }, guitar: ["alt8", "travis", "boom", "quarter"] },
   { id: "rock", zh: "搖滾", en: "Rock", tempo: 112,
     progs: [
       { ch: "I IV V IV", zh: "1-4-5-4(C-F-G-F)", en: "I–IV–V–IV (C–F–G–F)" },
       { ch: "I bVII IV I", zh: "1-♭7-4-1(C-B♭-F-C)", en: "I–♭VII–IV–I (C–B♭–F–C)" },
-      { ch: "i bVII bVI bVII", minor: true, zh: "小調 i-♭VII-♭VI-♭VII(Am-G-F-G)", en: "Minor i–♭VII–♭VI–♭VII (Am–G–F–G)" } ],
+      { ch: "i bVII bVI bVII", minor: true, zh: "小調 i-♭VII-♭VI-♭VII(Am-G-F-G)", en: "Minor i–♭VII–♭VI–♭VII (Am–G–F–G)" },
+      { ch: "I bVII IV I bVI bVII IV V", zh: "1-♭7-4-1-♭6-♭7-4-5(C-B♭-F-C-A♭-B♭-F-G)", en: "I–♭VII–IV–I–♭VI–♭VII–IV–V (C–B♭–F–C–A♭–B♭–F–G)" },
+      { lv: "a", ch: "i7 bVIIadd9 bVImaj7 V7#9", minor: true, end: "i7", zh: "小調搖滾・7♯9(Am7-Gadd9-Fmaj7-E7♯9)", en: "Minor rock with 7♯9 (Am7–Gadd9–Fmaj7–E7♯9)" },
+      { lv: "a", ch: "I7#9 IV9 I7#9 V7#9", end: "I7#9", zh: "放克搖滾 7♯9(C7♯9-F9-C7♯9-G7♯9)", en: "Funk rock 7♯9 (C7♯9–F9–C7♯9–G7♯9)" },
+      { lv: "a", ch: "vi7 IVmaj7 Iadd9 V/3 vi7 IVmaj7 bVIIadd9 V7sus4", end: "Iadd9", zh: "抒情搖滾 6-4-1-5(Am7-Fmaj7-Cadd9-G/B-Am7-Fmaj7-B♭add9-G7sus4)",
+        en: "Power ballad vi–IV–I–V (Am7–Fmaj7–Cadd9–G/B–Am7–Fmaj7–B♭add9–G7sus4)" } ],
     piano: { lh: ["rock8", "oct332", "hold"], rh: ["quarter", "eighths", "pop332"] }, guitar: ["boom", "alt8", "travis"] },
   { id: "blues", zh: "藍調", en: "Blues", tempo: 100, swing: true,
     progs: [
-      { ch: "I7 I7 I7 I7 IV7 IV7 I7 I7 V7 IV7 I7 V7", zh: "12 小節藍調", en: "12-bar blues" },
-      { ch: "I7 IV7 I7 I7 IV7 IV7 I7 I7 V7 IV7 I7 V7", zh: "12 小節藍調(第 2 小節先到 IV)", en: "12-bar blues (quick change)" } ],
+      { ch: "I7 IV7 I7 V7", zh: "4 小節藍調(C7-F7-C7-G7)", en: "4-bar blues (C7–F7–C7–G7)" },
+      { ch: "I7 V7 IV7 IV7 I7 V7 I7 V7", zh: "8 小節藍調(C7-G7-F7-F7-C7-G7-C7-G7)", en: "8-bar blues (C7–G7–F7–F7–C7–G7–C7–G7)" },
+      { ch: "I7 I7 I7 I7 IV7 IV7 I7 I7 V7 IV7 I7 V7", zh: "12 小節藍調(C7×4-F7×2-C7×2-G7-F7-C7-G7)", en: "12-bar blues (C7×4–F7×2–C7×2–G7–F7–C7–G7)" },
+      { ch: "I7 IV7 I7 I7 IV7 IV7 I7 I7 V7 IV7 I7 V7", zh: "12 小節藍調・第 2 小節先到 IV(C7-F7-C7×2-F7×2-C7×2-G7-F7-C7-G7)",
+        en: "12-bar blues, quick change (C7–F7–C7×2–F7×2–C7×2–G7–F7–C7–G7)" },
+      { lv: "a", ch: "I13 VI7b9 ii9 V13", zh: "藍調回轉(C13-A7♭9-Dm9-G13)", en: "Blues turnaround (C13–A7♭9–Dm9–G13)" },
+      { lv: "a", ch: "I9 V7#9 IV9 #ivo7 I9 VI7b9 ii9 V13", zh: "8 小節爵士藍調(C9-G7♯9-F9-F♯dim7-C9-A7♭9-Dm9-G13)", en: "8-bar jazz blues (C9–G7♯9–F9–F♯dim7–C9–A7♭9–Dm9–G13)" },
+      { lv: "a", ch: "I13 IV9 I13 I7#9 IV9 #ivo7 I13 VI7b9 ii9 V13 I13 V7b9", zh: "12 小節爵士藍調(C13-F9-C13-C7♯9-F9-F♯dim7-C13-A7♭9-Dm9-G13-C13-G7♭9)",
+        en: "12-bar jazz blues (C13–F9–C13–C7♯9–F9–F♯dim7–C13–A7♭9–Dm9–G13–C13–G7♭9)" } ],
     piano: { lh: ["boogie", "walking", "shell"], rh: ["offbeat", "charleston", "block"] }, guitar: ["travis", "boom", "comp4"] },
   { id: "jazz", zh: "爵士", en: "Jazz", tempo: 116, swing: true, voicing: "rootless",
     progs: [
       { ch: "ii7 V7 Imaj7 Imaj7", zh: "2-5-1(Dm7-G7-Cmaj7)", en: "ii–V–I (Dm7–G7–Cmaj7)" },
-      { ch: "Imaj7 vi7 ii7 V7", zh: "1-6-2-5 回轉(Cmaj7-Am7-Dm7-G7)", en: "I–vi–ii–V turnaround" },
-      { ch: "iii7 vi7 ii7 V7 Imaj7 Imaj7", zh: "3-6-2-5-1(Em7-Am7-Dm7-G7-Cmaj7)", en: "iii–vi–ii–V–I" } ],
+      { ch: "Imaj7 vi7 ii7 V7", zh: "1-6-2-5 回轉(Cmaj7-Am7-Dm7-G7)", en: "I–vi–ii–V turnaround (Cmaj7–Am7–Dm7–G7)" },
+      { ch: "ii7b5 V7 i7 i7", minor: true, zh: "小調 2-5-1(Bm7♭5-E7-Am7)", en: "Minor ii–V–i (Bm7♭5–E7–Am7)" },
+      { ch: "Imaj7 I7 IVmaj7 iv7 iii7 VI7 ii7 V7", zh: "1-1⁷-4-4m-3-6-2-5(Cmaj7-C7-Fmaj7-Fm7-Em7-A7-Dm7-G7)", en: "I–I7–IV–iv–iii–VI–ii–V (Cmaj7–C7–Fmaj7–Fm7–Em7–A7–Dm7–G7)" },
+      { lv: "a", ch: "ii9 V13 Imaj9 Imaj9", zh: "2-5-1・加張力(Dm9-G13-Cmaj9)", en: "ii–V–I with tensions (Dm9–G13–Cmaj9)" },
+      { lv: "a", ch: "Imaj9 VI7b9 ii9 V13", zh: "1-6-2-5・次屬和弦(Cmaj9-A7♭9-Dm9-G13)", en: "I–VI–ii–V with secondary dominant (Cmaj9–A7♭9–Dm9–G13)" },
+      { lv: "a", ch: "ii7b5 V7b9 i9 i9", minor: true, zh: "小調 2-5-1・♭9(Bm7♭5-E7♭9-Am9)", en: "Minor ii–V–i with ♭9 (Bm7♭5–E7♭9–Am9)" },
+      { lv: "a", ch: "iii7 VI7b9 ii9 V13 Imaj9 IVmaj7 ii9 V7b9", zh: "3-6-2-5-1-4-2-5(Em7-A7♭9-Dm9-G13-Cmaj9-Fmaj7-Dm9-G7♭9)",
+        en: "iii–VI–ii–V–I–IV–ii–V (Em7–A7♭9–Dm9–G13–Cmaj9–Fmaj7–Dm9–G7♭9)" },
+      { lv: "a", ch: "iv9 bVII13 bIIImaj9 bVImaj7 ii7b5 V7b9 i9 i6", minor: true, zh: "小調 4-7-3-6-2-5-1(Dm9-G13-Cmaj9-Fmaj7-Bm7♭5-E7♭9-Am9-Am6)",
+        en: "Minor iv–♭VII–♭III–♭VI–ii–V–i (Dm9–G13–Cmaj9–Fmaj7–Bm7♭5–E7♭9–Am9–Am6)" } ],
     piano: { lh: ["walking", "shell"], rh: ["charleston", "block", "offbeat"] }, guitar: ["comp4", "boom"] },
   { id: "rnb", zh: "R&B / 靈魂", en: "R&B / Soul", tempo: 72, voicing: "rootless",
     progs: [
-      { ch: "IVmaj7 iii7 ii7 Imaj7", zh: "4-3-2-1 七和弦下行(Fmaj7-Em7-Dm7-Cmaj7)", en: "IV–iii–ii–I sevenths" },
-      { ch: "Imaj7 iii7 IVmaj7 iv7", zh: "1-3-4-4m 借用小四級(Cmaj7-Em7-Fmaj7-Fm7)", en: "I–iii–IV–iv (borrowed iv7)" } ],
+      { ch: "IVmaj7 iii7 ii7 Imaj7", zh: "4-3-2-1 七和弦下行(Fmaj7-Em7-Dm7-Cmaj7)", en: "IV–iii–ii–I sevenths (Fmaj7–Em7–Dm7–Cmaj7)" },
+      { ch: "Imaj7 iii7 IVmaj7 iv7", zh: "1-3-4-4m 借用小四級(Cmaj7-Em7-Fmaj7-Fm7)", en: "I–iii–IV–iv, borrowed iv7 (Cmaj7–Em7–Fmaj7–Fm7)" },
+      { ch: "Imaj7 IVmaj7 iii7 vi7 ii7 iii7 IVmaj7 V7", zh: "1-4-3-6-2-3-4-5(Cmaj7-Fmaj7-Em7-Am7-Dm7-Em7-Fmaj7-G7)",
+        en: "I–IV–iii–vi–ii–iii–IV–V (Cmaj7–Fmaj7–Em7–Am7–Dm7–Em7–Fmaj7–G7)" },
+      { lv: "a", ch: "IVmaj9 iii7 ii9 Imaj9", zh: "4-3-2-1・加九音(Fmaj9-Em7-Dm9-Cmaj9)", en: "IV–iii–ii–I with 9ths (Fmaj9–Em7–Dm9–Cmaj9)" },
+      { lv: "a", ch: "Imaj9 iii7 IVmaj9 iv9", zh: "1-3-4-4m・借用 iv9(Cmaj9-Em7-Fmaj9-Fm9)", en: "I–iii–IV–iv with borrowed iv9 (Cmaj9–Em7–Fmaj9–Fm9)" },
+      { lv: "a", ch: "IVmaj9 iii7 ii9 Imaj9 IVmaj9 III7#9 vi9 V11", zh: "新靈魂 8 小節(Fmaj9-Em7-Dm9-Cmaj9-Fmaj9-E7♯9-Am9-G11)",
+        en: "Neo-soul 8 bars (Fmaj9–Em7–Dm9–Cmaj9–Fmaj9–E7♯9–Am9–G11)" } ],
     piano: { lh: ["hold", "shell", "oct332"], rh: ["anticip", "block", "arp"] }, guitar: ["arp16", "arp8"] },
   { id: "latin", zh: "拉丁", en: "Latin", tempo: 120,
     progs: [
       { ch: "ii7 V7 Imaj7 Imaj7", zh: "巴薩諾瓦 2-5-1(Dm7-G7-Cmaj7)", en: "Bossa nova ii–V–I (Dm7–G7–Cmaj7)", voicing: "rootless" },
-      { ch: "i bVII bVI V7", minor: true, zh: "佛朗明哥・安達魯西亞終止(Am-G-F-E7)", en: "Flamenco – Andalusian cadence (Am–G–F–E7)",
-        tempo: 96, pref: { lh: "broken158", rh: "half", guitar: "arp8" } } ],
+      { ch: "i7 iv7 ii7b5 V7", minor: true, zh: "小調巴薩諾瓦(Am7-Dm7-Bm7♭5-E7)", en: "Minor bossa nova (Am7–Dm7–Bm7♭5–E7)", voicing: "rootless" },
+      { ch: "i bVII bVI V", minor: true, zh: "佛朗明哥・安達魯西亞終止(Am-G-F-E)", en: "Flamenco – Andalusian cadence (Am–G–F–E)", ...ACC_FLAMENCO },
+      { ch: "Imaj7 Imaj7 II7 II7 ii7 bII7 Imaj7 bII7", zh: "巴薩諾瓦 8 小節(Cmaj7-Cmaj7-D7-D7-Dm7-D♭7-Cmaj7-D♭7)",
+        en: "Bossa nova 8 bars (Cmaj7–Cmaj7–D7–D7–Dm7–D♭7–Cmaj7–D♭7)", voicing: "rootless" },
+      { lv: "a", ch: "ii9 bII9 Imaj9 Imaj9", zh: "巴薩諾瓦・三全音代理(Dm9-D♭9-Cmaj9)", en: "Bossa nova with tritone sub (Dm9–D♭9–Cmaj9)", voicing: "rootless" },
+      { lv: "a", ch: "i bVII bVImaj7 V7b9", minor: true, end: "i", zh: "佛朗明哥・♭9(Am-G-Fmaj7-E7♭9)", en: "Flamenco with ♭9 (Am–G–Fmaj7–E7♭9)", ...ACC_FLAMENCO },
+      { lv: "a", ch: "i9 iv9 ii7b5 V7b9", minor: true, zh: "小調巴薩諾瓦・加張力(Am9-Dm9-Bm7♭5-E7♭9)", en: "Minor bossa nova with tensions (Am9–Dm9–Bm7♭5–E7♭9)", voicing: "rootless" },
+      { lv: "a", ch: "Imaj9 Imaj9 II13 II13 ii9 bII9 Imaj9 bII9", zh: "巴薩諾瓦 8 小節・加張力(Cmaj9-Cmaj9-D13-D13-Dm9-D♭9-Cmaj9-D♭9)",
+        en: "Bossa nova 8 bars with tensions (Cmaj9–Cmaj9–D13–D13–Dm9–D♭9–Cmaj9–D♭9)", voicing: "rootless" } ],
     piano: { lh: ["bossa", "broken158", "hold"], rh: ["anticip", "half", "arp"] }, guitar: ["bossa", "arp8"] },
 ];
+// 進行的層次(選單的分組標題):基本 / 進階 × 小節數
+const accProgLevel = p => (p.lv === "a" ? L("進階", "Advanced") : L("基本", "Basic")) + " · " + L(p.ch.split(" ").length + " 小節", p.ch.split(" ").length + " bars");
 /* 鋼琴左手型態。pedal:播放與譜上要不要踩踏板(每小節換一次) */
 const ACC_LH = {
   hold:       { zh: "八度長音", en: "Octave, held", pedal: true,
@@ -584,19 +648,68 @@ const ACC_KEYS = {   // [主音, 調號升降數]
 // 和弦音的字母:音程(半音)→ 比根音高幾個字母。音名一律「字母照級數推、升降照音高差算」,不查表(Cdim7 才不會拼錯)
 const ACC_IV_LETTER = { 0: 0, 2: 1, 3: 2, 4: 2, 7: 4, 9: 5, 10: 6, 11: 6 };
 
+/* 和弦種類:id 與 HarmonyMap 的 CHORDS 相同(吉他指型表 GTR_ADV 就是用 HarmonyMap 的指法引擎照這些 id 算的)。
+   t = 組成音(級數);sym = 和弦記號;kind/deg = MusicXML 的 <kind> 與額外的 <degree>;
+   rh = 鋼琴右手用哪幾個音(延伸和弦照爵士/流行的習慣省略根音與五音,根音交給左手:注重好不好聽,不求每個音都彈到);
+   top = 右手最低音只能是這幾個(3、7 音放最下面 = A/B 型,9、13 不會擠在最低的位置變成半音堆) */
+const ACC_QUAL = {
+  maj:    { t: "1 3 5",         sym: "",       kind: "major",              rh: "1 3 5" },
+  min:    { t: "1 b3 5",        sym: "m",      kind: "minor",              rh: "1 b3 5" },
+  dim:    { t: "1 b3 b5",       sym: "dim",    kind: "diminished",         rh: "1 b3 b5" },
+  aug:    { t: "1 3 #5",        sym: "aug",    kind: "augmented",          rh: "1 3 #5" },
+  sus4:   { t: "1 4 5",         sym: "sus4",   kind: "suspended-fourth",   rh: "1 4 5" },
+  sus2:   { t: "1 2 5",         sym: "sus2",   kind: "suspended-second",   rh: "1 2 5" },
+  "7":    { t: "1 3 5 b7",      sym: "7",      kind: "dominant",           rh: "1 3 5 b7" },
+  maj7:   { t: "1 3 5 7",       sym: "maj7",   kind: "major-seventh",      rh: "1 3 5 7" },
+  m7:     { t: "1 b3 5 b7",     sym: "m7",     kind: "minor-seventh",      rh: "1 b3 5 b7" },
+  m7b5:   { t: "1 b3 b5 b7",    sym: "m7♭5",   kind: "half-diminished",    rh: "1 b3 b5 b7" },
+  dim7:   { t: "1 b3 b5 bb7",   sym: "dim7",   kind: "diminished-seventh", rh: "1 b3 b5 bb7" },
+  mMaj7:  { t: "1 b3 5 7",      sym: "m(maj7)", kind: "major-minor",       rh: "1 b3 5 7" },
+  "6":    { t: "1 3 5 6",       sym: "6",      kind: "major-sixth",        rh: "1 3 5 6" },
+  m6:     { t: "1 b3 5 6",      sym: "m6",     kind: "minor-sixth",        rh: "1 b3 5 6" },
+  "7sus4": { t: "1 4 5 b7",     sym: "7sus4",  kind: "suspended-fourth", deg: [["7", 0]], rh: "1 4 5 b7" },
+  add9:   { t: "1 3 5 9",       sym: "add9",   kind: "major", deg: [["9", 0]], rh: "1 3 5 9", top: "1 3 5" },
+  madd9:  { t: "1 b3 5 9",      sym: "m(add9)", kind: "minor", deg: [["9", 0]], rh: "1 b3 5 9", top: "1 b3 5" },
+  "69":   { t: "1 3 5 6 9",     sym: "6/9",    kind: "major-sixth", deg: [["9", 0]], rh: "3 5 6 9", top: "3 6" },
+  m69:    { t: "1 b3 5 6 9",    sym: "m6/9",   kind: "minor-sixth", deg: [["9", 0]], rh: "b3 5 6 9", top: "b3 6" },
+  "9":    { t: "1 3 5 b7 9",    sym: "9",      kind: "dominant-ninth",     rh: "3 5 b7 9", top: "3 b7" },
+  maj9:   { t: "1 3 5 7 9",     sym: "maj9",   kind: "major-ninth",        rh: "3 5 7 9", top: "3 7" },
+  m9:     { t: "1 b3 5 b7 9",   sym: "m9",     kind: "minor-ninth",        rh: "b3 5 b7 9", top: "b3 b7" },
+  "9sus4": { t: "1 4 5 b7 9",   sym: "9sus4",  kind: "suspended-fourth", deg: [["9", 0]], rh: "4 5 b7 9", top: "4 b7" },
+  "11":   { t: "1 5 b7 9 11",   sym: "11",     kind: "dominant-11th",      rh: "11 5 b7 9", top: "11 b7" },
+  m11:    { t: "1 b3 5 b7 9 11", sym: "m11",   kind: "minor-11th",         rh: "b3 11 b7 9", top: "b3 b7" },
+  "13":   { t: "1 3 5 b7 9 13", sym: "13",     kind: "dominant-13th",      rh: "3 13 b7 9", top: "3 b7" },
+  maj13:  { t: "1 3 5 7 9 13",  sym: "maj13",  kind: "major-13th",         rh: "3 13 7 9", top: "3 7" },
+  "7b9":  { t: "1 3 5 b7 b9",   sym: "7♭9",    kind: "dominant", deg: [["9", -1]], rh: "3 5 b7 b9", top: "3 b7" },
+  "7s9":  { t: "1 3 5 b7 #9",   sym: "7♯9",    kind: "dominant", deg: [["9", 1]], rh: "3 5 b7 #9", top: "3 b7" },
+};
+// 羅馬數字後面的字尾 → 和弦種類(大寫 = 大三度家族、小寫 = 小三度家族)
+const ACC_SUFFIX = {
+  M: { "": "maj", "7": "7", maj7: "maj7", "6": "6", "69": "69", add9: "add9", sus4: "sus4", sus2: "sus2", "7sus4": "7sus4", "9sus4": "9sus4",
+       "9": "9", maj9: "maj9", "11": "11", "13": "13", maj13: "maj13", "7b9": "7b9", "7#9": "7s9", "+": "aug", o: "dim", o7: "dim7" },
+  m: { "": "min", "7": "m7", "6": "m6", "69": "m69", add9: "madd9", "9": "m9", "11": "m11", maj7: "mMaj7", "7b5": "m7b5", o: "dim", o7: "dim7" },
+};
+// 級數 → 半音;字母照級數推(9 = 2 的字母、13 = 6 的字母),升降照半音差算
+const ACC_DEG_SEMI = { "1": 0, b2: 1, "2": 2, b3: 3, "3": 4, "4": 5, "#4": 6, b5: 6, "5": 7, "#5": 8, b6: 8, "6": 9, bb7: 9, b7: 10, "7": 11,
+                       b9: 13, "9": 14, "#9": 15, "11": 17, "#11": 18, b13: 20, "13": 21 };
+const accDegNum = d => +d.replace(/[b#]/g, "");
+const ACC_ROOTLESS = ["maj", "min", "7", "maj7", "m7", "6", "m6"];   // 爵士無根音聲位換成 3-5-7-9 的和弦種類
+/* 進行的寫法:[b#]?羅馬數字 + 字尾 + /低音。低音寫和弦的級數:/3 /5 = 這個和弦自己的三音/五音(轉位),
+   /b7 /7 /9… = 離根音的級數(Am/G = vi/b7、F/G = IV/9、C/E = I/3) */
 function accParseRoman(tok){
-  const m = /^([b#]?)(VII|VI|IV|V|III|II|I|vii|vi|iv|v|iii|ii|i)(maj7|7)?(?:\/(b?\d))?$/.exec(tok);
+  const m = /^([b#]?)(VII|VI|IV|V|III|II|I|vii|vi|iv|v|iii|ii|i)([^/]*)(?:\/(.+))?$/.exec(tok);
   if (!m) throw new Error("bad roman " + tok);
   const minor = m[2] === m[2].toLowerCase();
-  let ivs, kind, kt;
-  if (!minor) {
-    if (m[3] === "7") { ivs = [0,4,7,10]; kind = "dominant"; kt = "7"; }
-    else if (m[3] === "maj7") { ivs = [0,4,7,11]; kind = "major-seventh"; kt = "maj7"; }
-    else { ivs = [0,4,7]; kind = "major"; kt = ""; }
-  } else if (m[3] === "7") { ivs = [0,3,7,10]; kind = "minor-seventh"; kt = "m7"; }
-  else { ivs = [0,3,7]; kind = "minor"; kt = "m"; }
-  return { deg: ACC_ROMAN.indexOf(m[2].toUpperCase()), acc: m[1] === "b" ? -1 : m[1] === "#" ? 1 : 0, ivs, kind, kt,
-           bassIv: m[4] ? ({ "3": ivs[1], "5": 7, "b7": 10, "7": 11 })[m[4]] : 0, roman: tok };
+  const id = ACC_SUFFIX[minor ? "m" : "M"][m[3]];
+  if (!id) throw new Error("bad chord suffix " + tok);
+  const q = ACC_QUAL[id], degs = q.t.split(" ");
+  let bassDeg = "1";
+  if (m[4]) {
+    bassDeg = m[4] === "3" ? degs.find(d => accDegNum(d) === 3 || d === "4" || d === "2") : m[4] === "5" ? degs.find(d => accDegNum(d) === 5) : m[4];
+    if (!(bassDeg in ACC_DEG_SEMI)) throw new Error("bad bass " + tok);
+  }
+  return { deg: ACC_ROMAN.indexOf(m[2].toUpperCase()), acc: m[1] === "b" ? -1 : m[1] === "#" ? 1 : 0, id, q, degs,
+           kind: q.kind, kt: q.sym, bassDeg, bassIv: ACC_DEG_SEMI[bassDeg] % 12, roman: tok };
 }
 function accNameParts(name){
   const li = ACC_LETTERS.indexOf(name[0]);
@@ -617,20 +730,28 @@ function accKeyFor(minor, tonic){
   const [tonicName, fifths] = ACC_KEYS[mode].find(k => k[0] === tonic) || ACC_KEYS[mode][0];
   return { ...accNameParts(tonicName), fifths, name: tonicName, mode };
 }
-// 依調把羅馬數字變成實際和弦(含拼法)
+/* 依調把羅馬數字變成實際和弦(含拼法)。
+   tones = 全部組成音(亮鍵、吉他拼法);core = 1-3-5-7 骨架(左手型態用:sus 和弦的三音位置是 4 或 2,沒有七音就 3 個) */
 function accRealize(rn, key){
   const rootLi = (key.li + rn.deg) % 7, rootPc = (key.pc + ACC_MAJ[rn.deg] + rn.acc + 12) % 12;
+  const toneD = d => { const iv = ACC_DEG_SEMI[d]; return { iv: iv % 12, deg: d, pc: (rootPc + iv) % 12, li: (rootLi + accDegNum(d) - 1) % 7 }; };
   const tone = iv => ({ iv, pc: (rootPc + iv) % 12, li: (rootLi + ACC_IV_LETTER[iv % 12]) % 7 });
-  const tones = rn.ivs.map(tone), bass = tone(rn.bassIv);
+  const tones = rn.degs.map(toneD), bass = toneD(rn.bassDeg);
+  const pick = (...ds) => { for (const d of ds) { const t = tones.find(x => x.deg === d); if (t) return t; } return null; };
+  const core = [tones[0], pick("3", "b3", "4", "11", "2") || toneD("3"), pick("5", "b5", "#5") || toneD("5")];
+  const sev = pick("7", "b7", "bb7", "6");
+  if (sev) core.push(sev);
   const name = accPcName(rootLi, rootPc) + rn.kt + (rn.bassIv ? "/" + accPcName(bass.li, bass.pc) : "");
-  return { ...rn, rootLi, rootPc, tones, bass, tone, name };
+  return { ...rn, rootLi, rootPc, tones, core, bass, tone, toneD, name };
 }
-// 右手聲位:所有轉位(密集排列)裡挑跟上一個和弦距離最小的(共同音不動、其他音走最近);第一個和弦挑最接近中心音高的
+// 右手聲位:所有轉位(密集排列)裡挑跟上一個和弦距離最小的(共同音不動、其他音走最近);第一個和弦挑最接近中心音高的。
+// starts:最低音只能是這幾個級數(爵士無根音 3-5-7-9 / 7-9-3-5);相鄰兩個音差半音的排法扣分(聽起來擠)
 function accVoiceRH(tones, prev, lo, hi, center, starts){
   let best = null, bestCost = Infinity;
   const n = tones.length;
+  tones = tones.slice().sort((a, b) => a.iv - b.iv);   // 照離根音的半音排(9 音排在 3 音前面),轉位才是密集排列
   for (let r = 0; r < n; r++) {
-    if (starts && !starts.includes(tones[r].iv % 12)) continue;   // 爵士無根音只用 3-5-7-9 / 7-9-3-5 兩種排法
+    if (starts && !starts.includes(tones[r].deg)) continue;
     const order = tones.slice(r).concat(tones.slice(0, r));
     for (let base = lo; base < lo + 12; base++) {
       if (base % 12 !== order[0].pc) continue;
@@ -639,6 +760,7 @@ function accVoiceRH(tones, prev, lo, hi, center, starts){
       if (v[n - 1].midi > hi) continue;
       const mean = v.reduce((s, x) => s + x.midi, 0) / n;
       let cost = 0.25 * Math.abs(mean - center);
+      for (let i = 1; i < n; i++) if (v[i].midi - v[i - 1].midi === 1) cost += 2.5;
       if (prev) {
         for (const x of v) cost += Math.min(...prev.map(p => Math.abs(p.midi - x.midi)));
         for (const p of prev) cost += Math.min(...v.map(x => Math.abs(p.midi - x.midi)));
@@ -648,10 +770,11 @@ function accVoiceRH(tones, prev, lo, hi, center, starts){
   }
   return best;
 }
-function accInvLabel(v, jazz){
-  const iv = v[0].iv;
-  if (jazz) return iv === 3 || iv === 4 ? L("A型", "A") : L("B型", "B");
-  return iv === 0 ? L("原位", "Root") : (iv === 3 || iv === 4) ? L("一轉", "1st") : iv === 7 ? L("二轉", "2nd") : L("三轉", "3rd");
+// 右手排法的名稱:無根音/延伸和弦 = A 型(三音在最下面)/ B 型(七音或六音在最下面);一般和弦 = 原位/轉位
+function accInvLabel(v, ext){
+  const n = accDegNum(v[0].deg);
+  if (ext) return n === 3 || n === 4 || n === 11 || n === 2 ? L("A型", "A") : L("B型", "B");
+  return n === 1 ? L("原位", "Root") : n === 3 || n === 4 || n === 2 ? L("一轉", "1st") : n === 5 ? L("二轉", "2nd") : L("三轉", "3rd");
 }
 function accPlace(pc, lo){ let m = lo; while (m % 12 !== pc) m++; return m; }
 function accAbove(pc, from){ let m = from + 1; while (m % 12 !== pc) m++; return m; }
@@ -727,22 +850,70 @@ function accGtrSlash(shape, bassPc){
   }
   return shape;
 }
-// 移調夾:整首能用開放和弦最多、夾的格數最少(例:F 調藍調 → Capo 3 用 D7/G7/A7… 指型)
-function accGtrPlan(chords){
+/* 進階和弦(七和弦以上、延伸和弦、分數和弦)與基本表沒有的和弦(m7♭5…)的吉他指型:用 HarmonyMap 的指法引擎
+   (chordVoicingsFor:公開和弦資料庫交叉比對 + 窮舉評分,跟 HarmonyMap 推薦的一樣)離線算好,左手手指照 FINGER_BOOK。
+   鍵 = "和弦 id|低音離根音幾個半音",值 = 12 個根音(C 起)各自最多 3 個指型、推薦的在前;
+   每個指型「6 弦 → 1 弦的格數(36 進位,x = 不彈):手指(. = 不按)」。改了進行就重建:node tools/build/gtr_adv.mjs */
+const GTR_ADV = {
+  "11|0":["x33333:.11111 x30331:.2.341 888a8a:111314","x44444:.11111 x41102:.412.3 999b9b:111314","x55555:.11111 xx0010:....1. aaacac:111314","x66666:.11111 xx1121:..1121","000202:...1.2 x77777:.11111 077777:.11111","111313:111314 11101x:111.2. x88888:.11111","222424:111314 242404:1213.4 x99999:.11111","300011:3...11 333535:111314 xaaaaa:.11111","444646:111314 xbbbbb:.11111","x00000:...... x02433:..1423 555757:111314","x11111:.11111 666868:111314","x22222:.11111 x24220:.1311. 777979:111314"],
+  "13|0":["x3x355:.1.234 877786:322241","x4x466:.1.234 988897:322241","x5x577:.1.234","x6x688:.1.234","0x012x:...12. 054654:.21431","1x123x:1.234. 101031:T.1.32","211120:21113.","302001:3.2..1 xa9aac:.21334 3x3455:1.1234","4x456x:1.234.","x0x022:....12 x05422:..4311 x05677:..1234","x1x133:.1.234 x10014:.1..24","x2x244:.1.234"],
+  "7b9|0":["x32323:.21314 xxa9b9:..2131","x43434:.21314","x54545:.21314 xx0542:...431","x65656:.21314 xx1020:..2.4.","020101:.3.1.2 x76767:.21314","131212:141213 xx3242:..2131 x87878:.21314","xx4353:..2131 212020:213.4. x98989:.21314","320131:32.141 xx5464:..2131 xa9a9a:.21314","xx6575:..2131 xbabab:.21314","x02323:..1213 575656:141213 xx7686:..2131","x10101:.1.2.3","x21212:.21314 xx98a8:..2131"],
+  "7s9|0":["x3234x:.2134. 8a898b:131214 xxa9bb:..2134","x4345x:.2134. x43420:.3241. 9b9a9c:131214","x5456x:.2134. xx0a78:...412","x6567x:.2134. xx1022:..2.34","020103:.2.1.4 x7678x:.2134. 0a999a:.21113","131214:131214 xx3244:..2134 x8789x:.2134.","212222:213334 xx4355:..2134 x989ax:.2134.","320301:32.4.1 xx5466:..2134 xa9abx:.2134.","434444:213334 xx6577:..2134 xbabcx:.2134.","xx7688:..2134 x0a989:..4213","x1012x:.1.23. xx8799:..2134","x2123x:.2134. xx98aa:..2134"],
+  "7sus4|0":["x33311:.23411 x35363:.13141 8a8a88:131411","x44422:.23411 x46474:.13141 9b9b99:131411","xx0213:...214 x5553x:.2341. x57585:.13141","xx1324:..1324 x66644:.23411 x68696:.13141","020200:.2.3.. x77755:.23411 x797a7:.13141","131311:131411 x88866:.23411 x8a8b8:.13141","242422:131411 xx4657:..1324 x99977:.23411","330011:23..11 353533:131411 xaaa88:.23411","464644:131411 xbbb99:.23411","x02030:..2.3. 575755:131411 x0798a:..1324","x13141:.13141 686866:131411 xx8a9b:..1324","x22200:.123.. x24252:.13141 797977:131411"],
+  "7|0":["x32310:.3241. x35353:.13141 8a8988:131211","x4342x:.3241. x46464:.13141 9b9a99:131211","xx0212:...213 x5453x:.3241. x57575:.13141","xx1323:..1324 x6564x:.3241. x68686:.13141","020100:.2.1.. x7675x:.3241. x79797:.13141","131211:131211 xx3545:..1324 x8a8a8:.13141","242322:131211 xx4656:..1324 x9b9b9:.13141","320001:32...1 353433:131211 xx5767:..1324","464544:131211 xx6878:..1324","x02020:..2.3. 575655:131211 x07989:..1324","x13131:.13141 686766:131211 xx8a9a:..1324","x21202:.213.4 x24242:.13141 797877:131211"],
+  "9sus4|0":["x33333:.11111 x30331:.2.341 888a8a:111314","x44444:.11111 x41102:.412.3 999b9b:111314","x55555:.11111 xx0010:....1. aaacac:111314","x66666:.11111 xx1121:..1121","000202:...1.2 x77777:.11111 077777:.11111","111313:111314 11101x:111.2. x88888:.11111","222424:111314 242404:1213.4 x99999:.11111","300011:3...11 333535:111314 xaaaaa:.11111","444646:111314 xbbbbb:.11111","x00000:...... x02433:..1423 555757:111314","x11111:.11111 666868:111314","x22222:.11111 x24220:.1311. 777979:111314"],
+  "9|0":["x32330:.2134. x32333:.21333 878788:213144","x43444:.21333 9b9a9b:131214 xxbacb:..2143","x54555:.21333 a9a9ax:21314.","x65666:.21333 xx1021:..1.32","020102:.2.1.3 x76777:.21333 09999a:.11112","xx3243:..2143 131213:131214 x87888:.21333","xx4354:..2143 242324:131214 x98999:.21333","300001:3....1 353435:131214 xx5465:..2143","xx6576:..2143 464546:131214 xbabbb:.21333","x02423:..1312 575657:131214 xcbccc:.21333","x10111:.1.234 686768:131214","x21222:.21333 797879:131214 xx98a9:..2143"],
+  "add9|0":["x32033:.21.34 xxa98a:..3214","x43141:.32141 xxba9b:..3214","x54252:.32141 xx097a:...314 xxcbac:..3214","x6536x:.3214. x6586x:.2143.","024100:.241.. xx2102:..21.3","xx3213:..3214","xx4324:..3214","320203:32.1.4 xx5435:..3214","xx6546:..3214","x02420:..132. xx7657:..3214","xx8768:..3214","xx9879:..3214"],
+  "dim7|0":["x34242:.23141 xxabab:..1324 8x787x:2.131.","x45353:.23141 xxbcbc:..1324 9x898x:2.131.","xx0101:...1.2 x56464:.23141 xx0a97:...431","xx1212:..1324 x67575:.23141 bxabax:2.131.","012020:.12.3. xx2323:..1324 x7868x:.2314.","xx3434:..1324 x89797:.23141 1x0101:1..2.3","2x121x:2.131. xx4545:..1324 x9a8a8:.23141","3x232x:2.131. xx5656:..1324 3x2320:2.131.","4x343x:2.131. xx6767:..1324 xbcaca:.23141","x01212:..1324 567575:123141 x07878:..1324","x12020:.12.3. 678686:123141 xx8989:..1324","x23131:.23141 789797:123141"],
+  "m6|0":["x3x243:.2.143 8aa8a8:123141","x4x354:.2.143 9bb9b9:123141","xx0201:...2.1 ax9aaa:2.1333","xx1312:..1312","022020:.12.3.","xx3534:..1312","xx4645:..1312 x9b8ax:.2413. 2x1222:2.1333","3x2333:2.1333 xx5756:..1312","4x344x:2.134. xx6867:..1312","x02212:..2314 577575:123141 xx7978:..1312","x13x23:.13.24 688686:123141","x20102:.2.1.3 799797:123141"],
+  "m7b5|0":["x3434x:.1324. xxabbb:..1222","x4545x:.1324. xxbccc:..1222 9x998x:2.341.","xx0111:...111 x53534:.31412 x5656x:.1324.","x6767x:.1324. xx1222:..1222 bxbbax:2.341.","012333:.12333 x7878x:.1324. cxccbx:2.341.","1x110x:1.23.. xx3444:..1222 x8989x:.1324.","202210:2.341. xx4555:..1222 x9a9ax:.1324.","3x332x:2.341. xx5666:..1222 xababx:.1324.","4x443x:2.341. xx6777:..1222 xbcbcx:.1324.","x0101x:..2.3. xx7888:..1222 5x554x:2.341.","x1212x:.1324. xx8999:..1222 6x665x:2.341.","x2323x:.1324. xx9aaa:..1222 7x776x:2.341."],
+  "m7|0":["x35343:.13121 x3134x:.2134. 8a8888:131111","x46454:.13121 9b9999:131111","xx0211:...211 x57565:.13121 acaaaa:131111","xx1322:..1423 x68676:.13121","020000:.2.... x79787:.13121","131111:131111 xx3544:..1423 x8a898:.13121","242222:131111 xx4655:..1423 x9b9a9:.13121","353333:131111 xx5766:..1423 xacaba:.13121","464444:131111 xx6877:..1423 xb9b9x:.2131.","x02010:..2.1. 575555:131111 xx7988:..1423","x13121:.13121 686666:131111 xx8a99:..1423","x24232:.13121 797777:131111 xx9baa:..1423"],
+  "m7|10":["x1101x:.12.3. 635343:413121 6655xx:2311..","x22120:.2314. 746454:413121 7766xx:2311..","x30231:.3.241 x33535:.11314 857565:413121","x4434x:.2314. 968676:413121 9988xx:2311..","xx0000:...... x52000:.41... x5545x:.2314.","xx1111:..1111 x6656x:.2314. b8a898:413121","002222:..1111 044655:.11423 x7767x:.2314.","110031:11..32 xx3333:..1111 x85066:.41.23","22110x:3412.. xx4444:..1111 x96807:.413.2","302210:4.231. 335055:112.34 xx5555:..1111","xx6666:..1111 413121:413121 4433xx:2311..","x00202:...1.2 5544xx:2311.. xx7777:..1111"],
+  "m7|3":["xx1313:..1314 x68088:.12.34 ba8888:431111","022120:.2314. 046454:.13121 x76607:.312.4","100211:T..211 xx3535:..1314 x80565:.4.121","21132x:21143. xx4646:..1314 x988b9:.21143","320000:21.... xx5757:..1314 xa0987:.4.321","431111:431111 43354x:21143. xx6868:..1314","x02222:..1111 54465x:21143. xx7670:..213.","x10031:.1..32 653333:431111 655066:211.34","x21102:.312.4 764444:431111 76687x:21143.","875555:431111 x32055:.21.34 877088:211.34","986666:431111 x43364:.21143 988a9x:21143.","xx0202:...2.3 x54405:.312.4 a97777:431111"],
+  "m9|0":["x31333:.21344 x30343:.1.243 8a888a:131114","x42444:.21344 9b999b:131114","x53555:.21344 acaaac:131114","x64666:.21344","020002:.2...4 x75777:.21344 0acbca:.13241","131113:131114 xx3044:..1.23 x86888:.21344","202120:2.314. 242224:131114 x97999:.21344","300331:2..341 353335:131114 xa8aaa:.21344","464446:131114 xb9bbb:.21344","x02413:..2413 575557:131114 xcaccc:.21344","686668:131114","x20222:.1.234 797779:131114"],
+  "maj7|0":["x32000:.21... x35453:.13241 xxa987:..4321","x46564:.13241 9xaa9x:1.342.","xx0222:...111 x57675:.13241 xxcba9:..4321","xx1333:..1333 x68786:.13241","021100:.312.. xx2444:..1333 x79897:.13241","xx3210:..321. 132211:142311 xx3555:..1333","243322:142311 xx4321:..4321 xx4666:..1333","320002:32...1 xx5432:..4321 354433:142311","465544:142311 xx6543:..4321 xx6888:..1333","x02120:..213. 576655:142311 x07999:..1333","x13231:.13241 687766:142311 xx8aaa:..1333","x24342:.13241 798877:142311 xx9bbb:..1333"],
+  "maj9|0":["x30000:.3.... x3243x:.2143. 8x998a:1.2314","x4354x:.2143. 98a898:214131","x5465x:.2143. xx0979:...314 axbbac:1.2314","x6576x:.2143.","021102:.312.4 x7687x:.2143.","102010:1.3.2. x8798x:.2143.","213121:214131 xx4364:..2143 x98a9x:.2143.","300002:2....1 324232:214131 xa9bax:.2143.","435343:214131 xbacbx:.2143.","x02424:..1314 x06657:..2314","x1021x:.1.32. 687768:132214","x2132x:.2143. xx98b9:..2143"],
+  "maj|0":["x32010:.32.1. x35553:.12341 8aa988:134211","x46664:.12341 9bba99:134211","xx0232:...132 x57775:.12341 accbaa:134211","xx1343:..1243 x68886:.12341","022100:.231.. xx2454:..1243 x79997:.12341","xx3211:..3211 133211:134211 xx3565:..1243","244322:134211 xx4322:..3211 xx4676:..1243","320003:21...3 355433:134211 xx5433:..3211","466544:134211 xx6544:..3211 xx6898:..1243","x02220:..123. 577655:134211 xx7655:..3211","x13331:.12341 688766:134211 xx8766:..3211","x24442:.12341 799877:134211 xx9877:..3211"],
+  "maj|4":["032010:.32.1. 035553:.12341 x75588:.31144","143121:143121 xx3664:..1342 x8666x:.3111.","200232:T..132 xx4775:..1342 x9777x:.3111.","3110xx:311... 365343:143121 xx5886:..1342","xxx100:...1.. 476454:143121 xx6997:..1342","x03211:..3211 5335xx:3124.. 587565:143121","xxx322:...211 6446xx:3124.. 698676:143121","x20003:.1...2 7557xx:3124.. 7a9787:143121","x3111x:.3111. xxx544:...211 8668xx:3124..","x42255:.31144 x47655:.14322 9779xx:3124..","xx0331:...341 x5333x:.3111. xxx766:...211","xx1402:..14.2 x6444x:.3111. xxx877:...211"],
+  "maj|7":["332010:342.1. 335553:112341 xx555x:..111.","446664:112341 xxx121:...132 xx666x:..111.","x00232:...121 557775:112341 xx777x:..111.","x110xx:.12... xxx343:...132 668886:112341","x22100:.231.. xxx454:...132 779997:112341","x33211:.34211 x33565:.11243 xxx565:...132","x44322:.34211 x44676:.11243 xxx676:...132","xx0003:.....1 xx000x:...... x55787:.11243","xx111x:..111. x66544:.34211 x66898:.11243","002220:..123. x77655:.34211 x779a9:.11243","113331:112341 xx333x:..111. x88766:.34211","224442:112341 xx444x:..111. x99877:.34211"],
+  "min|0":["x35543:.13421 8aa888:134111 xxa888:..3111","x46654:.13421 x4212x:.4213. 9bb999:134111","xx0231:...231 x57765:.13421 accaaa:134111","xx1342:..1342 x68876:.13421","022000:.23... x79987:.13421","133111:134111 xx3564:..1342 x8aa98:.13421","244222:134111 xx4222:..3111 xx4675:..1342","355333:134111 xx5786:..1342 xaccba:.13421","466444:134111 xx6897:..1342","x02210:..231. x02555:..1444 577555:134111","x13321:.13421 688666:134111 xx8666:..3111","x24432:.13421 799777:134111 xx9bca:..1342"]
+};
+const ACC_GTR_BASIC = ["maj", "min", "7", "m7", "maj7"];   // ACC_GTR_OPEN / ACC_GTR_BARRE 有的和弦種類
+function accGtrTable(rPc, id, bassIv){
+  const row = GTR_ADV[id + "|" + bassIv], e = row && row[rPc];
+  if (!e) return [];
+  return e.split(" ").map(v => {
+    const [f, fi] = v.split(":"), frets = [...f].map(c => c === "x" ? -1 : parseInt(c, 36));
+    return { frets, fingers: [...fi].map(c => c === "." ? 0 : c === "T" ? "T" : +c), open: frets.includes(0) && Math.max(...frets) <= 4, table: true };
+  });
+}
+// 這個和弦用哪一套指型:進階進行、或基本表沒有的和弦種類 / 低音不是和弦音的分數和弦 → GTR_ADV
+const accGtrUsesTable = (ch, adv) => adv || !ACC_GTR_BASIC.includes(ch.id) || (ch.bassIv && !ch.tones.some(t => t.pc === ch.bass.pc));
+/* 移調夾:整首能用開放和弦最多、夾的格數最少(例:F 調藍調 → Capo 3 用 D7/G7/A7… 指型)。noCapo:爵士類的進階進行不夾。
+   GTR_ADV 每個和弦有最多 3 個指型:推薦的優先,跟上一個和弦的把位越近越好(左手不用大跳,聲音也連得起來) */
+function accGtrPlan(chords, adv, noCapo){
   let best = null;
-  for (let c = 0; c <= 7; c++) {
-    let score = c * 0.6;
+  const pos = sh => { const on = sh.frets.filter(f => f > 0); return on.length ? on.reduce((a, b) => a + b, 0) / on.length : 0; };
+  for (let c = 0; c <= (noCapo ? 0 : 7); c++) {
+    let score = c * 0.6, prev = null, ok = true;
     const shapes = chords.map(ch => {
-      const s = accGtrShape((ch.rootPc - c + 12) % 12, ch.kt, (ch.bass.pc - c + 12) % 12);
-      if (!s.open) score += 3;
-      return s;
+      const r = (ch.rootPc - c + 12) % 12;
+      const list = accGtrUsesTable(ch, adv) ? accGtrTable(r, ch.id, ch.bassIv) : [accGtrShape(r, ch.kt, (ch.bass.pc - c + 12) % 12)];
+      if (!list.length) { ok = false; return null; }
+      let pick = list[0], pc = Infinity;
+      list.forEach((sh, i) => { const k = i * 2.5 + (prev ? 0.5 * Math.abs(pos(sh) - pos(prev)) : 0); if (k < pc) { pc = k; pick = sh; } });
+      prev = pick;
+      if (!pick.open) score += 3;
+      return pick;
     });
-    if (!best || score < best.score) best = { capo: c, shapes, score };
+    if (ok && (!best || score < best.score)) best = { capo: c, shapes, score };
   }
+  if (!best) throw new Error("no guitar shape for " + chords.map(ch => ch.name).join(" "));
   return best;
 }
 const ACC_SHARP_NAMES = ["C","C♯","D","E♭","E","F","F♯","G","A♭","A","B♭","B"];
 function accShapeName(ch, capo){
+  if (!capo) return ch.name;
   const r = (ch.rootPc - capo + 12) % 12, b = (ch.bass.pc - capo + 12) % 12;
   return ACC_SHARP_NAMES[r] + ch.kt + (ch.bassIv ? "/" + ACC_SHARP_NAMES[b] : "");
 }
@@ -822,10 +993,17 @@ function accNotesXml(evs, staff, voice, opts = {}){
 function accHarmonyXml(ch){
   const ra = accAlterOf(ch.rootLi, ch.rootPc), ba = accAlterOf(ch.bass.li, ch.bass.pc);
   return `<harmony><root><root-step>${ACC_LETTERS[ch.rootLi]}</root-step>${ra ? `<root-alter>${ra}</root-alter>` : ""}</root>`
-    + `<kind text="${ch.kt}">${ch.kind}</kind>`
+    + `<kind text="${esc(ch.kt)}">${ch.kind}</kind>`
+    + (ch.q.deg || []).map(([v, a]) => `<degree><degree-value>${v}</degree-value><degree-alter>${a}</degree-alter><degree-type>add</degree-type></degree>`).join("")
     + (ch.bassIv ? `<bass><bass-step>${ACC_LETTERS[ch.bass.li]}</bass-step>${ba ? `<bass-alter>${ba}</bass-alter>` : ""}</bass>` : "") + `</harmony>`;
 }
 
+// 最後補一小節主和弦:進行自己指定的 > 藍調 I7 / I13 > 進階 Imaj9 / i9 > 全是七和弦 Imaj7 / i7 > I / i
+function accEndRoman(style, prog){
+  const adv = prog.lv === "a", minor = !!prog.minor;
+  return prog.end || (style.id === "blues" ? (minor ? (adv ? "i9" : "i7") : adv ? "I13" : "I7") : adv ? (minor ? "i9" : "Imaj9")
+    : prog.ch.split(" ").every(r => /[679]|11|13/.test(r)) ? (minor ? "i7" : "Imaj7") : minor ? "i" : "I");
+}
 /* 產生整首:opts = { inst:"piano"|"guitar", style, prog, tonic, pattern, tempo, loops }
    回傳 { xml, title, guide, bars:[{ chord, notes:[{at, dur, midi, vel, hand|str, strum}] }], passLen }
    bars 是播放用的音符表(跟樂譜同一份資料產生,不用再從 MusicXML 解析) */
@@ -836,7 +1014,8 @@ function accGenerate(opts){
   const key = accKeyFor(minor, opts.tonic);
   const romans = prog.ch.split(" ");
   const loops = Math.max(1, +opts.loops || 1);
-  const endRoman = style.id === "blues" ? "I7" : minor ? "i" : (romans.every(r => /7/.test(r)) ? "Imaj7" : "I");   // 最後補一小節主和弦
+  const adv = prog.lv === "a";
+  const endRoman = accEndRoman(style, prog);
   const passChords = romans.map(r => accRealize(accParseRoman(r), key));
   const endChord = accRealize(accParseRoman(endRoman), key);
   const n = passChords.length;
@@ -852,19 +1031,23 @@ function accGenerate(opts){
     const rhKey = style.piano.rh.includes(opts.rh) ? opts.rh : (pref.rh || style.piano.rh[0]);
     Object.assign(guide, { lh: lhKey, rh: rhKey, pedal: ACC_LH[lhKey].pedal, rootless: voicing === "rootless" });
     const rootless = guide.rootless;
+    // 右手用哪幾個音:照和弦種類的 rh(延伸和弦已經省略根音、五音);爵士/R&B/巴薩諾瓦的三和弦、七和弦換成無根音 3-5-7-9
+    const extOf = ch => !!ch.q.top && !/^1/.test(ch.q.top) || (rootless && ACC_ROOTLESS.includes(ch.id));
     const voiceOf = (ch, prev) => {
-      let rhTones = ch.tones;
-      if (rootless) {
-        const sev = ch.tones[3] || ch.tone(ch.kind === "major" ? 11 : 10);
-        rhTones = [ch.tones[1], ch.tones[2], sev, ch.tone(2)];
+      let degs = ch.q.rh.split(" "), top = ch.q.top ? ch.q.top.split(" ") : null;
+      if (rootless && ACC_ROOTLESS.includes(ch.id)) {
+        const sev = ch.core[3] ? ch.core[3].deg : ch.id === "maj" ? "7" : "b7";
+        degs = [ch.core[1].deg, ch.core[2].deg, sev, "9"]; top = [ch.core[1].deg, sev];
       }
-      return accVoiceRH(rhTones, prev, 60, rootless ? 79 : 78, rootless ? 66 : 67, rootless ? [3, 4, 10, 11] : null);
+      const ext = extOf(ch);
+      return accVoiceRH(degs.map(ch.toneD), prev, 60, ext ? 79 : 78, ext ? 66 : 67, top);
     };
     // 先空跑一遍讓右手位置穩定(第二遍的第一個和弦是從最後一個和弦接過來的),之後每一遍都用同一組轉位
     let prev = null;
     for (const ch of passChords) prev = voiceOf(ch, prev);
     const rhs = passChords.map(ch => (prev = voiceOf(ch, prev)));
     const rhEnd = voiceOf(endChord, rhs[rhs.length - 1]);
+    guide.abForms = passChords.concat([endChord]).some(extOf);
     const at = (t, midi) => ({ ...t, midi });
     // 半音接近音的拼法:字母選升降最少的(Ab 上方 = A 而不是 B𝄫,C♯ 下方 = C 而不是 B♯),一樣少時照方向(G 上方 = A♭)
     const approach = (target, up) => {
@@ -878,18 +1061,18 @@ function accGenerate(opts){
       // 低音放 C2~B2:八度最高到 B3,一定在右手(C4 起)下面;沒有八度的型態(阿爾貝蒂、Boom-chick、巴薩諾瓦)放 E2~E♭3
       const b = at(ch.bass, accPlace(ch.bass.pc, ["alberti", "boom", "bossa"].includes(lhPat) ? 40 : 36));
       const oct = at(b, b.midi + 12);
-      const fifthT = ch.bassIv === 0 ? ch.tones[2] : (ch.bass.pc === ch.tones[2].pc ? ch.tones[0] : ch.tones[2]);
+      const fifthT = ch.bassIv === 0 ? ch.core[2] : (ch.bass.pc === ch.core[2].pc ? ch.core[0] : ch.core[2]);
       const f = at(fifthT, accAbove(fifthT.pc, b.midi));
       const fLow = (() => { const m = accPlace(fifthT.pc, b.midi - 12); return m >= 36 ? at(fifthT, m) : f; })();   // 五音放在根音下面(Boom-chick、巴薩諾瓦),低於 C2 就放上面
-      const up = ch.tones.filter(t => t.pc !== b.pc).map(t => at(t, accAbove(t.pc, b.midi))).sort((x, y) => x.midi - y.midi);
-      const lab = accInvLabel(rh, rootless);
+      const up = ch.core.filter(t => t.pc !== b.pc).map(t => at(t, accAbove(t.pc, b.midi))).sort((x, y) => x.midi - y.midi);
+      const lab = accInvLabel(rh, extOf(ch));
       const eighths = ps => ps.map((p, i) => ({ at: i * 2, dur: 2, pitches: [p] }));
       let lhEv;
       if (lhPat === "hold") lhEv = [{ at: 0, dur: 16, pitches: [b, oct] }];
       else if (lhPat === "oct332") lhEv = [[0, 6], [6, 6], [12, 4]].map(([a, d]) => ({ at: a, dur: d, pitches: [b, oct] }));
       else if (lhPat === "broken158") lhEv = eighths([b, f, oct, f, b, f, oct, f]);
       else if (lhPat === "broken1510") {
-        const tt = ch.tones.find(t => t.pc !== b.pc && t.pc !== f.pc) || ch.tones[1];
+        const tt = ch.core.find(t => t.pc !== b.pc && t.pc !== f.pc) || ch.core[1];
         const ten = at(tt, accAbove(tt.pc, b.midi + 12));
         lhEv = eighths([b, f, ten, f, b, f, ten, f]);
       } else if (lhPat === "alberti") {
@@ -904,11 +1087,13 @@ function accGenerate(opts){
         if (ap.midi === n3.midi) ap = approach(tgt, !(n3.midi > tgt.midi));
         lhEv = [b, n2, n3, ap].map((p, i) => ({ at: i * 4, dur: 4, pitches: [p] }));
       } else if (lhPat === "shell") {
-        const st = ch.tones[3] || ch.tones[1];
+        const st = ch.core[3] || ch.core[1];
         lhEv = [{ at: 0, dur: 16, pitches: [b, at(st, accAbove(st.pc, b.midi))] }];
       } else if (lhPat === "boogie") {
+        // 1-3-5-6-♭7-6-5-3:三音、五音、七音照這個和弦自己的(ii7 是小三度,不是硬套大三度)
         const r0 = ch.bassIv ? at(ch.tones[0], accPlace(ch.tones[0].pc, 36)) : b;
-        lhEv = [0, 4, 7, 9, 10, 9, 7, 4].map((iv, i) => ({ at: i * 2, dur: 2, pitches: [at(ch.tone(iv), r0.midi + iv)] }));
+        const [t3, t5] = [ch.core[1], ch.core[2]], t6 = ch.toneD("6"), t7 = ch.core[3] && ch.core[3].deg !== "6" ? ch.core[3] : ch.toneD("b7");
+        lhEv = [ch.tones[0], t3, t5, t6, t7, t6, t5, t3].map((t, i) => ({ at: i * 2, dur: 2, pitches: [at(t, r0.midi + ACC_DEG_SEMI[t.deg] % 12)] }));
       } else lhEv = [{ at: 0, dur: 6, pitches: [b] }, { at: 6, dur: 2, pitches: [fLow] }, { at: 8, dur: 6, pitches: [b] }, { at: 14, dur: 2, pitches: [fLow] }];   // bossa
       // 兩隻手不能撞在一起:左手的音一定比右手最低音低,碰到就降八度(降不下去就不彈那個音)
       const rhMin = Math.min(...rh.map(p => p.midi));
@@ -947,7 +1132,7 @@ function accGenerate(opts){
     guide.steps[guide.steps.length - 1].end = true;
   } else {
     const allChords = passChords.concat([endChord]);
-    plan = accGtrPlan(allChords);
+    plan = accGtrPlan(allChords, adv, adv && (!!style.swing || voicing === "rootless"));
     guide.capo = plan.capo;
     const gKey = style.guitar.includes(opts.gpat) ? opts.gpat : (pref.guitar || style.guitar[0]), pat = ACC_GTR_PATTERNS[gKey];
     guide.gpat = gKey;
@@ -1586,7 +1771,10 @@ function renderControls(){
   const st = curStyle(), pr = curProg(), mode = pr.minor ? "minor" : "major", isG = state.inst === "guitar";
   document.querySelectorAll("#instSeg button").forEach(b => b.setAttribute("aria-pressed", String(b.dataset.inst === state.inst)));
   $("selStyle").innerHTML = ACC_STYLES.map(s => opt(s.id, L(s.zh, s.en), s.id === st.id)).join("");
-  $("selProg").innerHTML = st.progs.map((p, i) => opt(i, L(p.zh, p.en), i === state.prog)).join("");
+  // 進行依層次分組(基本 / 進階 × 小節數),組的順序照第一次出現
+  const groups = [];
+  st.progs.forEach((p, i) => { const g = accProgLevel(p); let e = groups.find(x => x.g === g); if (!e) groups.push(e = { g, items: [] }); e.items.push(opt(i, L(p.zh, p.en), i === state.prog)); });
+  $("selProg").innerHTML = groups.map(e => `<optgroup label="${esc(e.g)}">${e.items.join("")}</optgroup>`).join("");
   $("selKey").innerHTML = ACC_KEYS[mode].map(([k]) => opt(k, keyLabel(k, pr.minor), k === state.tonic)).join("");
   $("selLH").innerHTML = st.piano.lh.map(k => opt(k, L(ACC_LH[k].zh, ACC_LH[k].en), k === state.lh)).join("");
   $("selRH").innerHTML = st.piano.rh.map(k => opt(k, L(ACC_RH[k].zh, ACC_RH[k].en), k === state.rh)).join("");
@@ -1708,9 +1896,10 @@ function renderStage(){
     h = gd.steps.map((st, i) => `<div class="scard" role="button" tabindex="0" data-step="${i}">`
       + `<div class="scard-head"><span class="scard-name">${esc(st.name)}</span><span class="scard-sub">${esc(st.end ? L("結尾", "end") : st.roman)}</span></div>`
       + pianoKbSvg(st, win)
-      // 卡片夠寬時右手、左手排在同一橫排,不夠寬才換行
-      + `<div class="scard-hands"><div class="scard-row"><span>${esc(L("右手", "RH"))}</span><i>${esc(st.rh.join(" "))}</i><em>${esc(st.rhLabel)}</em></div>`
-      + `<div class="scard-row"><span>${esc(L("左手", "LH"))}</span><i>${esc(st.lh.join(" "))}</i></div></div></div>`).join("");
+      // 卡片夠寬時左手、右手排在同一橫排,不夠寬才換行
+      // 左手是低音,放左邊(換行時在上面)
+      + `<div class="scard-hands"><div class="scard-row"><span>${esc(L("左手", "LH"))}</span><i>${esc(st.lh.join(" "))}</i></div>`
+      + `<div class="scard-row"><span>${esc(L("右手", "RH"))}</span><i>${esc(st.rh.join(" "))}</i><em>${esc(st.rhLabel)}</em></div></div></div>`).join("");
     $("stageSub").textContent = L("點卡片聽和弦", "Tap a card to hear it");
   }
   $("stageRow").innerHTML = h;
@@ -1844,7 +2033,8 @@ function renderLegend(){
       + (lh.pedal ? "<br>" + esc(L("每小節換和弦時換踏板(譜上的 Ped. 記號)。", "Change the pedal with each chord (Ped. marks in the score).")) : "")
       + "<br>" + esc(L("右手轉位怎麼選:換和弦時,兩個和弦共同的音按住不動,其他音往最近的和弦音移動,所以右手不會一直彈原位,而是在同一個音域裡用轉位接起來(卡片上標了每個和弦用的轉位)。左手一定在右手下面,兩隻手不會按到同一個鍵。",
               "Choosing RH inversions: keep the common tones, move the other notes to the nearest chord tone, so the right hand stays in one area using inversions (each card shows which one). The left hand always stays below the right hand."))
-      + (g.rootless ? "<br>" + esc(L("右手用爵士無根音聲位(根音交給左手):A 型由 3 音起、B 型由 7 音起,交替使用讓聲部平順。", "The RH uses rootless voicings (the LH has the root): type A starts on the 3rd, type B on the 7th, alternating for smooth voice-leading.")) : "")
+      + (g.abForms ? "<br>" + esc(L("右手用無根音聲位(根音交給左手;延伸和弦也省略五音,只留 3、7 音和張力音):A 型由 3 音起、B 型由 7 音起,交替使用讓聲部平順。",
+        "The RH uses rootless voicings (the LH has the root; extended chords also drop the 5th, keeping the 3rd, 7th and tensions): type A starts on the 3rd, type B on the 7th, alternating for smooth voice-leading.")) : "")
       + swing
       + "<br>" + esc(L("鍵盤:金色是根音、青色是其他和弦音;上方括號是右手、下方括號是左手;每張卡片的鍵盤是同一段,看得出手怎麼移。播放時再亮一層的是正在彈的鍵。節奏格:● 是右手和弦、下排是左手彈的音。",
                        "Keyboard: gold = root, teal = other chord tones; the bracket above is the right hand, below is the left hand; every card shows the same stretch of keys so you can see how the hands move. Keys that light up brighter are sounding now. Rhythm grid: ● = right-hand chord, bottom row = left-hand notes."))
@@ -1893,6 +2083,11 @@ async function renderScore(){
     // 和弦記號的升降號用 ♭ ♯(標準寫法),不是 b #
     if (osmd && osmd.EngravingRules && osmd.EngravingRules.resetChordAccidentalTexts && !osmd.__acc) {
       osmd.EngravingRules.resetChordAccidentalTexts(osmd.EngravingRules.ChordAccidentalTexts, true); osmd.__acc = true;
+      // 和弦記號照流行/爵士譜的寫法:OSMD 預設會寫成 C maj6、A7(♭9)、C69(9);後加的同名規則優先
+      const R = osmd.EngravingRules, E = opensheetmusicdisplay.ChordSymbolEnum;
+      if (E && R.ChordSymbolLabelTexts) R.ChordSymbolLabelTexts.setValue(E.majorsixth, "6");
+      if (R.addChordName) [["7♭9", "dominant", "♭9"], ["7♯9", "dominant", "♯9"], ["6/9", "majorsixth", "9"], ["m6/9", "minorsixth", "9"],
+        ["add9", "major", "9"], ["m(add9)", "minor", "9"]].forEach(([n, k, d]) => R.addChordName(n, k, [d], [], []));
     }
     await osmd.load(xml);
     if (xml !== curGen.xml) return;   // 載入期間又改了設定
@@ -2171,6 +2366,14 @@ $("selStyle").addEventListener("change", e => { chooseProg(e.target.value, 0, tr
 $("selProg").addEventListener("change", e => { chooseProg(state.style, +e.target.value, false); renderControls(); regenerate(); });
 // 下面這些在播放中改也不會停:下一小節起生效
 $("selKey").addEventListener("change", e => { state.tonic = e.target.value; renderControls(); regenerate({ keepPlaying: true, keepSel: true }); });
+// 調的 ‹ ›:半音上下,12 個調繞一圈(B 升半音回到 C);播放中照樣不停,方便把同一個進行練過 12 個調
+function stepKey(d){
+  const list = ACC_KEYS[curProg().minor ? "minor" : "major"], i = list.findIndex(k => k[0] === state.tonic);
+  state.tonic = list[((i < 0 ? 0 : i) + d + 12) % 12][0];
+  renderControls(); regenerate({ keepPlaying: true, keepSel: true });
+}
+$("keyDown").addEventListener("click", () => stepKey(-1));
+$("keyUp").addEventListener("click", () => stepKey(1));
 $("selLH").addEventListener("change", e => { state.lh = e.target.value; regenerate({ keepPlaying: true, keepSel: true }); });
 $("selRH").addEventListener("change", e => { state.rh = e.target.value; regenerate({ keepPlaying: true, keepSel: true }); });
 $("selGtr").addEventListener("change", e => { state.gpat = e.target.value; regenerate({ keepPlaying: true, keepSel: true }); });
