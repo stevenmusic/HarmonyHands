@@ -9,7 +9,9 @@
 - 產生器的起點是 ScrollScore commit d597ba8(已被 e849169 撤回)的「和弦伴奏練習產生器」
 
 ## 絕不能做的事
-- **不要拆檔**:單一 index.html(跟 ScrollScore / HarmonyMap 同一套部署,之後要包成 App 上架)。測試工具放 tools/,不屬於 App
+- **不要拆檔**:單一 index.html(跟 ScrollScore / HarmonyMap 同一套部署)。只做網頁,不上架 App(使用者說明)。測試工具放 tools/,不屬於網頁本體
+- **吉他音源只用每個音都有錄音的**(使用者要求「取樣音高不夠密集的就不要」):MF Concert Guitar(8 個音)、FreePats 西班牙古典吉他(缺音)都不用。
+  網頁也算散布取樣(瀏覽器會下載取樣檔):換音源前要確認授權允許在網頁上當樂器播放
 - **不要把取樣複製進來**:音色直接從 `https://raw.githubusercontent.com/stevenmusic/ScrollScore/main/` 讀(公開 repo,可跨網域)
   - 鋼琴 `piano/`:manifest.json + `pf-<音名>-v<層>.flac`,音名用 Cs/Ds/Fs/Gs/As;30 個取樣音每 3 個半音一個(A0、C1、D♯1…);16 層力度(velRanges);
     音量 = 0.015 + 0.985×(力度/127)²;manifest 的 tune 是音分校正;只載入用得到的(音 × 力度層),截短到需要的長度
